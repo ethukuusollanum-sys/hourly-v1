@@ -80,7 +80,7 @@ export default function App() {
 
   return (
     <ActivitiesProvider profile={profile}>
-      <Layout profile={profile} onProfileUpdate={setProfile}>
+      <Layout profile={profile} onProfileUpdate={updateProfile}>
         <Routes>
           <Route path="/" element={<Dashboard profile={profile} />} />
           <Route path="/daily" element={<DailyLogs profile={profile} />} />
