@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { esc } from '../lib/helpers'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, Tag, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, Tag, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight } from 'lucide-react'
 import ActivityModal from './ActivityModal'
 import ExportModal from './ExportModal'
 import CategoryModal from './CategoryModal'
@@ -46,6 +46,23 @@ export default function Layout({ children, profile, onProfileUpdate }) {
   useEffect(() => {
     setSidebarOpen(false)
   }, [location.pathname])
+
+  const [installEvent, setInstallEvent] = useState(null)
+  const [installDismissed, setInstallDismissed] = useState(false)
+
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setInstallEvent(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (!installEvent) return
+    installEvent.prompt()
+    const result = await installEvent.userChoice
+    if (result.outcome === 'accepted') setInstallEvent(null)
+    setInstallDismissed(true)
+  }
 
   async function doLogout() {
     await supabase.auth.signOut()
@@ -149,6 +166,21 @@ export default function Layout({ children, profile, onProfileUpdate }) {
           {children}
         </div>
       </main>
+
+      {installEvent && !installDismissed && (
+        <div id="install-banner">
+          <div className="install-banner-inner">
+            <div>
+              <div className="install-banner-title">Install Hourly Tracker</div>
+              <div className="install-banner-text">Add to home screen for quick access</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button className="btn bs bsm" onClick={() => setInstallDismissed(true)}>Not now</button>
+              <button className="btn bp bsm" onClick={handleInstall}><SquareArrowOutUpRight size={12} /> Install</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div id="bnav">
         <div className="bnav-inner">
