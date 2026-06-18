@@ -13,20 +13,6 @@ export function ActivitiesProvider({ children, profile }) {
     if (!user) return
     setLoading(true)
 
-    const team = profile?.settings?.team
-    let query = supabase
-      .from('activities')
-      .select('*')
-      .order('created_at', { ascending: true })
-
-    if (team) {
-      query = query.in('user_id',
-        supabase.from('profiles').select('id').eq('settings->>team', team)
-      )
-    } else {
-      query = query.eq('user_id', user.id)
-    }
-
     const subscription = supabase
       .channel('activities-channel')
       .on('postgres_changes',
