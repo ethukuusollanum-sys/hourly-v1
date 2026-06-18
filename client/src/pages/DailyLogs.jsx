@@ -6,7 +6,7 @@ import { supabase } from '../config/supabase'
 import { useToast } from '../context/ToastContext'
 
 export default function DailyLogs({ profile }) {
-  const { activities } = useActivities()
+  const { activities, setActivities } = useActivities()
   const { toast } = useToast()
   const categories = profile?.categories || []
 
@@ -90,7 +90,10 @@ export default function DailyLogs({ profile }) {
   async function delActivity(id) {
     if (!confirm('Delete this activity?')) return
     const { error } = await supabase.from('activities').delete().eq('id', id)
-    if (!error) toast('Deleted', 'inf')
+    if (!error) {
+      setActivities(prev => prev.filter(a => a.id !== id))
+      toast('Deleted', 'inf')
+    }
   }
 
   return (
