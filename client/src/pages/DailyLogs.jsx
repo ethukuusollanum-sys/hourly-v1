@@ -87,8 +87,9 @@ export default function DailyLogs({ profile }) {
     return cat?.name !== 'Break'
   }).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
 
-  async function delActivity(id) {
-    if (!confirm('Delete this activity?')) return
+  async function delActivity(id, name) {
+    const confirmed = await window.__confirm(`Delete "${name}"?`, 'Delete Activity')
+    if (!confirmed) return
     const { error } = await supabase.from('activities').delete().eq('id', id)
     if (!error) {
       setActivities(prev => prev.filter(a => a.id !== id))
@@ -172,7 +173,7 @@ export default function DailyLogs({ profile }) {
                     <span style={{ fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx3)' }}>
                       {a.duration || 60}m
                     </span>
-                    <button className="ib del" onClick={() => delActivity(a.id)} style={{ opacity: 0.7 }}>
+                    <button className="ib del" onClick={() => delActivity(a.id, a.name)} style={{ opacity: 0.7 }}>
                       <Trash2 size={12} />
                     </button>
                   </div>

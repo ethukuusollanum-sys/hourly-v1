@@ -12,8 +12,9 @@ export default function Categories({ profile, onUpdate }) {
     if (window.__categoryModal) window.__categoryModal.open(id)
   }
 
-  async function deleteCat(id) {
-    if (!confirm('Delete this category?')) return
+  async function deleteCat(id, name) {
+    const confirmed = await window.__confirm(`Delete "${name}"?`, 'Delete Category')
+    if (!confirmed) return
     const updated = categories.filter(c => c.id !== id)
     await onUpdate({ categories: updated })
     toast('Deleted', 'inf')
@@ -60,7 +61,7 @@ export default function Categories({ profile, onUpdate }) {
                     <Pencil size={12} />
                   </button>
                   {!isDef && (
-                    <button className="ib del" onClick={() => deleteCat(c.id)}>
+                    <button className="ib del" onClick={() => deleteCat(c.id, c.name)}>
                       <Trash2 size={12} />
                     </button>
                   )}

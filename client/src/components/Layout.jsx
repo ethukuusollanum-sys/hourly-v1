@@ -9,6 +9,7 @@ import ActivityModal from './ActivityModal'
 import ExportModal from './ExportModal'
 import CategoryModal from './CategoryModal'
 import CropModal from './CropModal'
+import ConfirmModal from './ConfirmModal'
 import AccSwitcher from './AccSwitcher'
 
 const NAV_ITEMS = [
@@ -224,6 +225,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
       <ExportModal profile={profile} />
       <CategoryModal profile={profile} onUpdate={onProfileUpdate} />
       <CropModal profile={profile} onUpdate={onProfileUpdate} />
+      <ConfirmModal />
       {showAccSwitcher && (
         <AccSwitcher
           accounts={savedAccounts}

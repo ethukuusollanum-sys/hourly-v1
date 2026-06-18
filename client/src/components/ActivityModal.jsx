@@ -87,7 +87,8 @@ export default function ActivityModal({ profile }) {
   }
 
   async function delActivity(id) {
-    if (!confirm('Delete this activity?')) return
+    const confirmed = await window.__confirm(`Delete "${name}"?`, 'Delete Activity')
+    if (!confirmed) return
     const { error } = await supabase.from('activities').delete().eq('id', id)
     if (!error) {
       setActivities(prev => prev.filter(a => a.id !== id))

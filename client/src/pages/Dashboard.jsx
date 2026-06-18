@@ -40,8 +40,9 @@ export default function Dashboard({ profile }) {
     }
   }
 
-  async function delActivity(id) {
-    if (!confirm('Delete this activity?')) return
+  async function delActivity(id, name) {
+    const confirmed = await window.__confirm(`Delete "${name}"?`, 'Delete Activity')
+    if (!confirmed) return
     const { error } = await supabase.from('activities').delete().eq('id', id)
     if (!error) {
       setActivities(prev => prev.filter(a => a.id !== id))
@@ -114,7 +115,7 @@ export default function Dashboard({ profile }) {
                           <button className="ib" onClick={() => openEdit(a)} title="Edit">
                             <Pencil size={12} />
                           </button>
-                          <button className="ib del" onClick={() => delActivity(a.id)} title="Delete">
+                          <button className="ib del" onClick={() => delActivity(a.id, a.name)} title="Delete">
                             <Trash2 size={12} />
                           </button>
                         </div>
