@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -32,8 +32,6 @@ export default function Layout({ children, profile, onProfileUpdate }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showAccSwitcher, setShowAccSwitcher] = useState(false)
-  const pillRef = useRef(null)
-  const navInnerRef = useRef(null)
 
   const userData = {
     name: profile?.name || user?.email?.split('@')[0] || '?',
@@ -48,25 +46,6 @@ export default function Layout({ children, profile, onProfileUpdate }) {
   useEffect(() => {
     setSidebarOpen(false)
   }, [location.pathname])
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      updatePill()
-    })
-  }, [location.pathname])
-
-  function updatePill() {
-    const pill = pillRef.current
-    const inner = navInnerRef.current
-    if (!pill || !inner) return
-    const activeItem = inner.querySelector('.bni.on')
-    if (activeItem) {
-      const tr = activeItem.getBoundingClientRect()
-      const pr = inner.getBoundingClientRect()
-      pill.style.left = (tr.left - pr.left + 4) + 'px'
-      pill.style.width = (tr.width - 8) + 'px'
-    }
-  }
 
   async function doLogout() {
     await supabase.auth.signOut()
@@ -151,9 +130,9 @@ export default function Layout({ children, profile, onProfileUpdate }) {
             <button className="ham" onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
             </button>
-            <div>
-              <div style={{ fontSize: '14.5px', fontWeight: 700 }}>{pageTitle}</div>
-              <div style={{ fontSize: 11, color: 'var(--tx2)' }}>{today}</div>
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pageTitle}</div>
+              <div style={{ fontSize: 11, color: 'var(--tx2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{today}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -172,30 +151,38 @@ export default function Layout({ children, profile, onProfileUpdate }) {
       </main>
 
       <div id="bnav">
-        <div className="bnav-inner" ref={navInnerRef}>
-          <div className="bnav-pill" ref={pillRef} />
-          {NAV_ITEMS_BOTTOM.map((item, idx) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path ||
-              (item.path === '/' && location.pathname === '/')
-            return (
-              <div
-                key={item.id}
-                className={`bni${isActive ? ' on' : ''}`}
-                onClick={() => navigate(item.path)}
-              >
-                <span className="bni-icon"><Icon size={20} /></span>
-                <span className="bni-lbl">{item.label}</span>
-              </div>
-            )
-          })}
-          <div className="bni" onClick={() => setShowAccSwitcher(true)}>
-            <span className="bni-icon">
-              <div className="av" style={{ width: 22, height: 22, fontSize: 10 }}>
-                {userData.photoURL ? <img src={userData.photoURL} alt="" /> : init}
-              </div>
-            </span>
-            <span className="bni-lbl">Account</span>
+        <div className="bnav-inner">
+          <div>
+            {NAV_ITEMS_BOTTOM.map((item) => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.path ||
+                (item.path === '/' && location.pathname === '/')
+              return (
+                <button
+                  key={item.id}
+                  className={`bni${isActive ? ' on' : ''}`}
+                  onClick={() => navigate(item.path)}
+                >
+                  <span className="bni-icon">
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  </span>
+                  <span className="bni-lbl">{item.label}</span>
+                  {isActive && (
+                    <span style={{ position: 'absolute', inset: -1, borderRadius: 9999, background: 'linear-gradient(90deg,rgba(16,185,129,.1),transparent)', filter: 'blur(2px)', pointerEvents: 'none' }} />
+                  )}
+                </button>
+              )
+            })}
+            <button className="bni" onClick={() => setShowAccSwitcher(true)}>
+              <span className="bni-icon">
+                <div style={{ width: 20, height: 20, borderRadius: '50%', padding: 1.5, background: '#334155', transition: 'all .3s', flexShrink: 0 }}>
+                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#090d16', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 900, color: '#fff' }}>
+                    {userData.photoURL ? <img src={userData.photoURL} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : init}
+                  </div>
+                </div>
+              </span>
+              <span className="bni-lbl">Account</span>
+            </button>
           </div>
         </div>
       </div>
