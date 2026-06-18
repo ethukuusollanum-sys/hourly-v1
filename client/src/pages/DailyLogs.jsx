@@ -114,12 +114,12 @@ export default function DailyLogs({ profile }) {
         </div>
       </div>
 
-      <div className="sh2" style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="sh2" style={{ marginBottom: 14, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button className="btn bs bsm" onClick={() => navDay(-1)}>
             <ChevronLeft size={13} /> Prev
           </button>
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', minWidth: 200 }}>
             <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--tx)' }}>
               {formatDate(selectedDate)}
               {isToday && <span style={{ fontSize: '9.5px', color: 'var(--ac)', fontFamily: 'var(--mo)', marginLeft: 6 }}>TODAY</span>}

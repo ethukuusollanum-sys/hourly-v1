@@ -1,0 +1,52 @@
+/* Scene1_Desktop.css */
+
+.scene-1 {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--scene1-bg, #030303);
+  color: var(--tx, #fff);
+  overflow: hidden;
+}
+
+.desktop-wrapper {
+  width: 400px;
+  height: 300px;
+  perspective: 1000px;
+}
+
+.laptop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #222;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+
+.screen {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 40px;
+  background: radial-gradient(circle at 50% 30%, #111, #000);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.screen pre {
+  color: #e6f7ff;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.scroll-hint {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: var(--tx2, #8899aa);
+}

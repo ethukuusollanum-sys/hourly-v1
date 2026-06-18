@@ -71,12 +71,9 @@ export default function Categories({ profile, onUpdate }) {
         </div>
       </div>
 
-      <div style={{
-        marginTop: 14, padding: '14px 18px',
-        background: 'var(--sf2)', border: '1px solid var(--bd2)',
-        borderRadius: 'var(--r)', fontSize: 12, color: 'var(--tx2)',
-      }}>
-        💡 The <strong style={{ color: 'var(--tx)' }}>Break</strong> category is excluded from focus score calculations.
+      <div className="infbox" style={{ marginTop: 14 }}>
+        <span>💡</span>
+        <span>The <strong style={{ color: 'var(--tx)' }}>Break</strong> category is excluded from focus score calculations.</span>
       </div>
     </>
   )

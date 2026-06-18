@@ -42,7 +42,7 @@ export default function AccSwitcher({ accounts, currentUid, onClose, onLogout })
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>
-                    {a.name}{isCurr ? ' <span style="font-size:9.5px;color:var(--ac)">(active)</span>' : ''}
+                    {a.name}{isCurr && <> <span style={{fontSize:'9.5px',color:'var(--ac)'}}>(active)</span></>}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--tx3)' }}>{a.email}</div>
                 </div>

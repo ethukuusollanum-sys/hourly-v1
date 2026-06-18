@@ -99,7 +99,7 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div className="tc2 m4">
         <div className="card">
           <div className="ch"><div className="ct">Daily Hours</div></div>
           <div style={{ padding: '16px 18px' }}>
@@ -209,7 +209,7 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div className="tc2 m4">
         <div className="card">
           <div className="ch"><div className="ct">Top Activities</div><div className="cs">Most frequent</div></div>
           <div style={{ padding: '10px 18px' }}>
@@ -266,8 +266,8 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 700 }}>🤖 AI Productivity Summary</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, minHeight: 30 }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 700, lineHeight: 1.3 }}>🤖 AI Productivity Summary</div>
         <button className="btn bs bsm" onClick={genAI} disabled={aiLoading}>
           {aiLoading ? 'Generating…' : 'Generate →'}
         </button>

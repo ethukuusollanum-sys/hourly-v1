@@ -78,7 +78,7 @@ export default function Settings({ profile, onUpdate }) {
   const init = (profile?.name || user?.email?.split('@')[0] || '?').charAt(0).toUpperCase()
 
   return (
-    <div style={{ maxWidth: 500 }}>
+    <div style={{ maxWidth: 500, margin: '0 auto' }}>
       {/* Profile */}
       <div className="card m4">
         <div className="ch"><div className="ct">Profile</div></div>
