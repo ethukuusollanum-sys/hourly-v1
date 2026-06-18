@@ -280,12 +280,19 @@ export default function AuthPage() {
 function friendlyErr(code) {
   const m = {
     'user-not-found': 'No account with this email.',
+    'user_not_found': 'No account with this email.',
     'wrong-password': 'Incorrect password.',
     'invalid-credential': 'Invalid email or password.',
+    'invalid_credentials': 'Invalid email or password.',
     'email-already-in-use': 'Email already registered.',
+    'email_taken': 'Email already registered.',
     'weak-password': 'Password must be at least 6 characters.',
+    'weak_password': 'Password must be at least 6 characters.',
     'too-many-requests': 'Too many attempts. Please wait.',
+    'too_many_requests': 'Too many attempts. Please wait.',
     'network-request-failed': 'Network error.',
+    'email_not_confirmed': 'Please verify your email address.',
+    'invalid_grant': 'Session expired. Please sign in again.',
   }
   return m[code] || code || 'Something went wrong. Please try again.'
 }

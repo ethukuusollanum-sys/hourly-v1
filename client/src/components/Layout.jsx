@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { esc } from '../lib/helpers'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, Tag, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, Tag, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight, RefreshCw } from 'lucide-react'
 import ActivityModal from './ActivityModal'
 import ExportModal from './ExportModal'
 import CategoryModal from './CategoryModal'
@@ -50,6 +50,13 @@ export default function Layout({ children, profile, onProfileUpdate }) {
 
   const [installEvent, setInstallEvent] = useState(null)
   const [installDismissed, setInstallDismissed] = useState(false)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setUpdateAvailable(true)
+    window.addEventListener('swupdate', handler)
+    return () => window.removeEventListener('swupdate', handler)
+  }, [])
 
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setInstallEvent(e) }
@@ -63,6 +70,11 @@ export default function Layout({ children, profile, onProfileUpdate }) {
     const result = await installEvent.userChoice
     if (result.outcome === 'accepted') setInstallEvent(null)
     setInstallDismissed(true)
+  }
+
+  function handleUpdate() {
+    window.__swWaiting?.postMessage('skip-waiting')
+    window.location.reload()
   }
 
   async function doLogout() {
@@ -178,6 +190,24 @@ export default function Layout({ children, profile, onProfileUpdate }) {
             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               <button className="btn bs bsm" onClick={() => setInstallDismissed(true)}>Not now</button>
               <button className="btn bp bsm" onClick={handleInstall}><SquareArrowOutUpRight size={12} /> Install</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {updateAvailable && (
+        <div id="install-banner">
+          <div className="install-banner-inner" style={{ gap: 12 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--acbg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <RefreshCw size={14} color="var(--ac)" />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="install-banner-title">Update Available</div>
+              <div className="install-banner-text">A new version is ready — refresh to update</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button className="btn bs bsm" onClick={() => setUpdateAvailable(false)}>Later</button>
+              <button className="btn bp bsm" onClick={handleUpdate} style={{ gap: 5 }}><RefreshCw size={11} /> Update</button>
             </div>
           </div>
         </div>

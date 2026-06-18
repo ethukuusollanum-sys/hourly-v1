@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../config/supabase'
@@ -31,18 +31,30 @@ export default function CropModal({ profile, onUpdate }) {
     input.value = ''
   }
 
-  function onMouseDown(e) {
-    setDragging(true)
-    setDragStart({ x: e.clientX - pos.x, y: e.clientY - pos.y })
-  }
-
-  function onMouseMove(e) {
+  useEffect(() => {
     if (!dragging) return
-    setPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+    function onUp() { setDragging(false) }
+    window.addEventListener('mouseup', onUp)
+    window.addEventListener('touchend', onUp)
+    return () => {
+      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('touchend', onUp)
+    }
+  }, [dragging])
+
+  function onDragStart(e) {
+    const cx = e.clientX ?? e.touches[0].clientX
+    const cy = e.clientY ?? e.touches[0].clientY
+    setDragging(true)
+    setDragStart({ x: cx - pos.x, y: cy - pos.y })
   }
 
-  function onMouseUp() {
-    setDragging(false)
+  function onDragMove(e) {
+    if (!dragging) return
+    const cx = e.clientX ?? e.touches?.[0]?.clientX
+    const cy = e.clientY ?? e.touches?.[0]?.clientY
+    if (cx == null) return
+    setPos({ x: cx - dragStart.x, y: cy - dragStart.y })
   }
 
   function onWheel(e) {
@@ -105,15 +117,17 @@ export default function CropModal({ profile, onUpdate }) {
   const scalePercent = scale / 100
 
   return (
-    <div className="ov" onMouseUp={onMouseUp}>
+    <div className="ov">
       <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
         <div className="mh"><div className="mt2">Crop Profile Photo</div></div>
         <div className="mb2">
           <div
             id="crop_area"
             ref={areaRef}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
+            onMouseDown={onDragStart}
+            onMouseMove={onDragMove}
+            onTouchStart={onDragStart}
+            onTouchMove={onDragMove}
             onWheel={onWheel}
             style={{ userSelect: 'none', cursor: dragging ? 'grabbing' : 'grab' }}
           >

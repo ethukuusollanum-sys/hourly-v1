@@ -86,8 +86,8 @@ export default function ActivityModal({ profile }) {
     setSaving(false)
   }
 
-  async function delActivity(id) {
-    const confirmed = await window.__confirm(`Delete "${name}"?`, 'Delete Activity')
+  async function delActivity(id, activityName) {
+    const confirmed = await window.__confirm(`Delete "${activityName || name}"?`, 'Delete Activity')
     if (!confirmed) return
     const { error } = await supabase.from('activities').delete().eq('id', id)
     if (!error) {
