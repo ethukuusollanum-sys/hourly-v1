@@ -65,7 +65,14 @@ export default function OnboardingPage({ profile, onComplete }) {
               <div style={{ fontSize: 13, fontWeight: 600 }}>Hourly Reminders</div>
               <div style={{ fontSize: '11.5px', color: 'var(--tx2)' }}>Browser notification each hour</div>
             </div>
-            <button className={`tog${notif ? ' on' : ''}`} onClick={() => setNotif(!notif)}></button>
+            <button className={`tog${notif ? ' on' : ''}`} onClick={() => {
+              const newVal = !notif
+              setNotif(newVal)
+              if (!newVal) return
+              if (typeof Notification === 'undefined') return
+              if (Notification.permission === 'default') Notification.requestPermission()
+              else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
+            }}></button>
           </div>
           <button className="btn bp bfw" onClick={finish} disabled={saving}>
             {saving ? 'Saving…' : 'Start Tracking'}

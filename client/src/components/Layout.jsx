@@ -11,6 +11,7 @@ import CategoryModal from './CategoryModal'
 import CropModal from './CropModal'
 import ConfirmModal from './ConfirmModal'
 import AccSwitcher from './AccSwitcher'
+import useHourlyReminder from '../hooks/useHourlyReminder'
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, id: 'n_dash' },
@@ -47,6 +48,8 @@ export default function Layout({ children, profile, onProfileUpdate }) {
   useEffect(() => {
     setSidebarOpen(false)
   }, [location.pathname])
+
+  useHourlyReminder(profile?.settings?.notif)
 
   const [installEvent, setInstallEvent] = useState(null)
   const [installDismissed, setInstallDismissed] = useState(false)

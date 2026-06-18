@@ -190,7 +190,15 @@ export default function Settings({ profile, onUpdate }) {
               <div style={{ fontSize: 13, fontWeight: 600 }}>Hourly Reminders</div>
               <div style={{ fontSize: '11.5px', color: 'var(--tx2)' }}>Browser notification each hour</div>
             </div>
-            <button className={`tog${notif ? ' on' : ''}`} onClick={() => { setNotif(!notif); markDirty() }} />
+            <button className={`tog${notif ? ' on' : ''}`} onClick={() => {
+              const newVal = !notif
+              setNotif(newVal)
+              markDirty()
+              if (!newVal) return
+              if (typeof Notification === 'undefined') return
+              if (Notification.permission === 'default') Notification.requestPermission()
+              else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
+            }} />
           </div>
         </div>
       </div>
