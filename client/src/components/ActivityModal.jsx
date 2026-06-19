@@ -133,29 +133,25 @@ export default function ActivityModal({ profile }) {
 
     try {
       if (editId) {
-        const { error } = await supabase
-          .from('activities')
-          .update({ name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart, updated_at: new Date().toISOString() })
-          .eq('id', editId)
+        const upd = { name: name.trim(), category, duration: dur, notes: notes.trim(), updated_at: new Date().toISOString() }
+        if (workStart.trim()) upd.work_start = workStart
+        const { error } = await supabase.from('activities').update(upd).eq('id', editId)
         if (error) throw error
         setActivities(prev => prev.map(a => a.id === editId ? { ...a, name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart } : a))
         toast('Updated ✓', 'ok')
       } else {
-        const { data, error } = await supabase
-          .from('activities')
-          .insert({
-            user_id: user.id,
-            name: name.trim(),
-            category,
-            duration: dur,
-            work_start: workStart,
-            notes: notes.trim(),
-            date: today,
-            slot,
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single()
+        const ins = {
+          user_id: user.id,
+          name: name.trim(),
+          category,
+          duration: dur,
+          notes: notes.trim(),
+          date: today,
+          slot,
+          created_at: new Date().toISOString(),
+        }
+        if (workStart.trim()) ins.work_start = workStart
+        const { data, error } = await supabase.from('activities').insert(ins).select().single()
         if (error) throw error
         setActivities(prev => [...prev, data])
         toast('Logged ✓', 'ok')

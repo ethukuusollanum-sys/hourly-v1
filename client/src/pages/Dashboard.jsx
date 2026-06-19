@@ -42,6 +42,8 @@ export default function Dashboard({ profile }) {
         category: act.category,
         duration: act.duration,
         notes: act.notes,
+        work_start: act.work_start,
+        date: act.date,
       })
     }
   }
