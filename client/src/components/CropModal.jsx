@@ -104,7 +104,8 @@ export default function CropModal({ profile, onUpdate }) {
       await onUpdate({ photo_url: publicUrl })
       toast('Profile photo updated! ✓', 'ok')
     } catch (err) {
-      toast('Upload failed. Check Storage bucket "avatars" exists.', 'er')
+      const msg = err?.message || err?.error || 'Unknown error'
+      toast('Upload failed: ' + msg, 'er')
       console.error(err)
     }
   }
