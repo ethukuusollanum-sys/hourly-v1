@@ -101,7 +101,7 @@ export default function CropModal({ profile, onUpdate }) {
         .from('Avatar')
         .getPublicUrl(filePath)
 
-      await onUpdate({ photo_url: publicUrl })
+      await onUpdate({ photo_url: publicUrl + '?cb=' + Date.now() })
       toast('Profile photo updated! ✓', 'ok')
     } catch (err) {
       const msg = err?.message || err?.error || 'Unknown error'
