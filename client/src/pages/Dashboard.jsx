@@ -1,6 +1,6 @@
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getBreakSlots, getSlotDuration, getToday, H, M, hexToRgba, esc, sortByCreatedAsc, calculateRemainingTime } from '../lib/helpers'
+import { getSlots, getBreakSlots, getSlotDuration, getSlotSegments, getToday, H, M, hexToRgba, esc, sortByCreatedAsc, calculateRemainingTime, minToString, parseSlot, timeToMin } from '../lib/helpers'
 import { supabase } from '../config/supabase'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -24,7 +24,9 @@ export default function Dashboard({ profile }) {
   const slots = getSlots(settings.workStart || '09:00', settings.workEnd || '18:00')
   // Reconcile auto-break rows for today against the configured break window.
   useBreakSync(user, settings, activities, setActivities)
-  const breakSlots = new Set(getBreakSlots(settings, slots).map(d => d.slot))
+  const breakSlotData = getBreakSlots(settings, slots)
+  const breakSlotMap = new Map(breakSlotData.map(d => [d.slot, d.duration]))
+  const breakSlots = new Set(breakSlotData.map(d => d.slot))
   const filled = new Set(ta.map(a => a.slot))
   const nh = new Date().getHours().toString().padStart(2, '0')
 
@@ -91,11 +93,10 @@ export default function Dashboard({ profile }) {
             const isn = slot.split(':')[0] === nh
             const isBreak = breakSlots.has(slot)
             const tasks = sa.filter(a => !a.is_break)
-            const slotBreaks = sa.filter(a => a.is_break)
             const slotLimit = getSlotDuration(slot)
-            const breakMins = slotBreaks.reduce((s, a) => s + (a.duration || 0), 0)
+            const breakMins = breakSlotMap.get(slot) || 0
             const logMins = tasks.reduce((s, a) => s + (a.duration || 0), 0)
-            const availMins = calculateRemainingTime({ slotDuration: slotLimit, breaks: slotBreaks, logs: tasks })
+            const availMins = Math.max(0, slotLimit - breakMins - logMins)
             return (
               <div key={slot} className={`tlr${isBreak ? ' brk' : ''}`}>
                 <div className="tlt">
@@ -113,6 +114,31 @@ export default function Dashboard({ profile }) {
                     {logMins > 0 && <span>Log: {logMins}m</span>}
                     <span style={{ color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)', fontWeight: 600 }}>Avail: {availMins}m</span>
                   </div>
+                  {/* Timeline bar */}
+                  {(() => {
+                    const segs = getSlotSegments(slot, settings?.breakSlots || [], sa)
+                    const total = timeToMin(parseSlot(slot).end) - timeToMin(parseSlot(slot).start)
+                    if (total <= 0) return null
+                    return (
+                      <div style={{ display: 'flex', height: 14, borderRadius: 4, overflow: 'hidden', marginBottom: 6, gap: 1 }}>
+                        {segs.occupied.length === 0 && !segs.available.length ? (
+                          <div style={{ flex: 1, background: 'var(--bd)', borderRadius: 4 }} />
+                        ) : (
+                          <>
+                            {segs.occupied.map((seg, i) => {
+                              const pct = ((seg.end - seg.start) / total) * 100
+                              const color = seg.type === 'break' ? '#f97316' : 'var(--ac)'
+                              return <div key={`occ-${i}`} style={{ width: `${pct}%`, background: color, borderRadius: i === 0 && !segs.available.length ? 4 : 0, opacity: seg.type === 'break' ? 0.7 : 0.85 }} title={`${seg.type === 'break' ? 'Break' : 'Work'}: ${minToString(seg.start)} - ${minToString(seg.end)}`} />
+                            })}
+                            {segs.available.map((gap, i) => {
+                              const pct = ((gap.end - gap.start) / total) * 100
+                              return <div key={`avail-${i}`} style={{ width: `${pct}%`, background: 'var(--bd)', opacity: 0.4 }} title={`Available: ${minToString(gap.start)} - ${minToString(gap.end)}`} />
+                            })}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {isBreak && (
                     <div className="ec brk-card">
                       <div className="edot" style={{ background: '#f97316', boxShadow: '0 0 5px #f9731666' }} />

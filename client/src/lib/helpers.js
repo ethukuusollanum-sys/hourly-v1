@@ -121,9 +121,126 @@ export function getToday() {
   return new Date().toISOString().split('T')[0]
 }
 
-export function getSlotDuration(slot) {
+export function parseSlot(slot) {
   const [s, e] = slot.split(' - ')
-  return timeToMin(e) - timeToMin(s)
+  return { start: s, end: e }
+}
+
+export function getSlotDuration(slot) {
+  const { start, end } = parseSlot(slot)
+  return timeToMin(end) - timeToMin(start)
+}
+
+// Returns segments within a slot: break periods, work periods, and available gaps.
+// breakConfigs: [{ start: "HH:MM", end: "HH:MM" }] from settings.breakSlots
+// logs: work/break activities in this slot (with optional work_start)
+export function getSlotSegments(slot, breakConfigs, logs) {
+  const { start: slotStart, end: slotEnd } = parseSlot(slot)
+  const sMin = timeToMin(slotStart)
+  const eMin = timeToMin(slotEnd)
+
+  // Collect break windows (from config) that overlap this slot
+  const breakWindows = []
+  for (const bc of breakConfigs || []) {
+    const bStart = timeToMin(bc.start)
+    const bEnd = timeToMin(bc.end)
+    const overlapStart = Math.max(bStart, sMin)
+    const overlapEnd = Math.min(bEnd, eMin)
+    if (overlapEnd > overlapStart) {
+      breakWindows.push({ start: overlapStart, end: overlapEnd })
+    }
+  }
+
+  // Merge overlapping break windows
+  breakWindows.sort((a, b) => a.start - b.start)
+  const mergedBreaks = []
+  for (const bw of breakWindows) {
+    if (mergedBreaks.length && bw.start <= mergedBreaks[mergedBreaks.length - 1].end) {
+      mergedBreaks[mergedBreaks.length - 1].end = Math.max(mergedBreaks[mergedBreaks.length - 1].end, bw.end)
+    } else {
+      mergedBreaks.push({ ...bw })
+    }
+  }
+
+  // Build occupied timeline (breaks + existing work)
+  const occupied = mergedBreaks.map(b => ({ ...b, type: 'break' }))
+  for (const log of logs || []) {
+    if (log.is_break) continue
+    const wStart = log.work_start ? timeToMin(log.work_start) : null
+    const dur = parseInt(log.duration) || 0
+    if (wStart !== null && dur > 0) {
+      occupied.push({ start: wStart, end: wStart + dur, type: 'work', activity: log })
+    }
+  }
+  occupied.sort((a, b) => a.start - b.start)
+
+  // Merge all occupied intervals
+  const merged = []
+  for (const o of occupied) {
+    if (merged.length && o.start <= merged[merged.length - 1].end) {
+      if (o.end > merged[merged.length - 1].end) {
+        merged[merged.length - 1].end = o.end
+      }
+    } else {
+      merged.push({ ...o })
+    }
+  }
+
+  // Compute available gaps
+  const available = []
+  let cursor = sMin
+  for (const seg of merged) {
+    if (seg.start > cursor) {
+      available.push({ start: cursor, end: seg.start })
+    }
+    cursor = Math.max(cursor, seg.end)
+  }
+  if (cursor < eMin) {
+    available.push({ start: cursor, end: eMin })
+  }
+
+  return { breaks: mergedBreaks, occupied: merged, available }
+}
+
+// Check if a proposed work window overlaps any break window.
+// workStart, workEnd in minutes since midnight.
+export function hasOverlapWithBreaks(workStartMin, workEndMin, breakConfigs, slot) {
+  const { start: slotStart, end: slotEnd } = parseSlot(slot)
+  const sMin = timeToMin(slotStart)
+  const eMin = timeToMin(slotEnd)
+  for (const bc of breakConfigs || []) {
+    const bStart = Math.max(timeToMin(bc.start), sMin)
+    const bEnd = Math.min(timeToMin(bc.end), eMin)
+    if (bEnd > bStart && workStartMin < bEnd && workEndMin > bStart) {
+      return true
+    }
+  }
+  return false
+}
+
+// Get the next available work start time within a slot.
+// Returns "HH:MM" string or null if no time available.
+export function getSuggestedWorkStart(slot, breakConfigs, logs, minDuration = 1) {
+  const { start: slotStart } = parseSlot(slot)
+  const segments = getSlotSegments(slot, breakConfigs, logs)
+  const sMin = timeToMin(slotStart)
+  const available = segments.available
+  if (!available.length) return null
+  // Return the start of the first available gap that can fit minDuration
+  for (const gap of available) {
+    if (gap.end - gap.start >= minDuration) {
+      const h = Math.floor(gap.start / 60)
+      const m = gap.start % 60
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    }
+  }
+  return null
+}
+
+export function minToString(min) {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 export function calculateRemainingTime({ slotDuration, breaks, logs }) {
