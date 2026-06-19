@@ -3,6 +3,7 @@ import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { weekStart, getSlots, getToday, DAYS, H, M, hexToRgba, esc } from '../lib/helpers'
 import { generateAISummary } from '../api/ai'
+import { Download } from 'lucide-react'
 
 export default function WeeklyReport({ profile }) {
   const { activities } = useActivities()
@@ -264,6 +265,13 @@ export default function WeeklyReport({ profile }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, minHeight: 30 }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 700, lineHeight: 1.3 }}>📊 Export Report</div>
+        <button className="btn bp bsm" onClick={() => { if (window.__openExport) window.__openExport() }}>
+          <Download size={13} /> Generate Report
+        </button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, minHeight: 30 }}>

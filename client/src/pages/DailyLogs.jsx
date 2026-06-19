@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useActivities } from '../context/ActivitiesContext'
-import { DAYS, MONTHS, formatDate, H, M, hexToRgba, esc } from '../lib/helpers'
+import { DAYS, MONTHS, formatDate, H, M, hexToRgba, esc, sortByCreatedAsc } from '../lib/helpers'
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { supabase } from '../config/supabase'
 import { useToast } from '../context/ToastContext'
@@ -79,7 +79,7 @@ export default function DailyLogs({ profile }) {
   }
 
   const dayActs = activities.filter(a => a.date === selectedDate)
-    .sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+    .sort(sortByCreatedAsc)
   const isToday = selectedDate === today
   const dayTm = dayActs.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const dayWm = dayActs.filter(a => {

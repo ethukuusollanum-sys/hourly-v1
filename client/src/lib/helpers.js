@@ -76,9 +76,15 @@ export function applyTheme(t) {
 }
 
 export const ROW_COLORS = [
-  'FFE8F4F8', 'FFF0F9FF', 'FFECFDF5', 'FFFDF6EC', 'FFF5F3FF',
-  'FFFEF9C3', 'FFFFE4E6', 'FFE0F2FE', 'FFEEF2FF', 'FFF0FDF4',
+  'FFF3F4F6', 'FFE8EAF0', 'FFDDDEE8', 'FFD5D7E3', 'FFD0D3E2', 'FFD4D6E8',
+  'FFDBD9EE', 'FFE4DCF0', 'FFEEE0F0', 'FFF5E3ED', 'FFF8E5E8', 'FFFBE8E0',
+  'FFFEF0D6', 'FFFDF5CC', 'FFF8F6C5', 'FFF0F5C5', 'FFE6F2CB', 'FFDCEFD5',
+  'FFD4EDE2', 'FFD3EBEF', 'FFD7E8F4', 'FFDEE5F4', 'FFE3E3F0', 'FFE9E8F0',
 ]
+
+export function sortByCreatedAsc(a, b) {
+  return (a.created_at || '') < (b.created_at || '') ? -1 : (a.created_at || '') > (b.created_at || '') ? 1 : 0
+}
 
 export function getToday() {
   return new Date().toISOString().split('T')[0]

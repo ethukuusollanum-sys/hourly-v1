@@ -1,6 +1,6 @@
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getToday, H, M, hexToRgba, esc } from '../lib/helpers'
+import { getSlots, getToday, H, M, hexToRgba, esc, sortByCreatedAsc } from '../lib/helpers'
 import { supabase } from '../config/supabase'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -83,7 +83,7 @@ export default function Dashboard({ profile }) {
         <div>
           {slots.map(slot => {
             const sa = ta.filter(a => a.slot === slot)
-              .sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+              .sort(sortByCreatedAsc)
             const isn = slot.split(':')[0] === nh
             return (
               <div key={slot} className="tlr">

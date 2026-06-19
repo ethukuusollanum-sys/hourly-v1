@@ -134,7 +134,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
           </div>
         </nav>
         <div className="sf">
-          <button className="btn bs bfw bsm" onClick={() => {}} style={{ marginBottom: 4, gap: 6 }}>
+          <button className="btn bs bfw bsm" onClick={() => { if (window.__openExport) window.__openExport() }} style={{ marginBottom: 4, gap: 6 }}>
             <Download size={13} /> Export Report
           </button>
           <div className="up" style={{ cursor: 'pointer' }} onClick={() => setShowAccSwitcher(true)}>

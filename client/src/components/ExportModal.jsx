@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { formatDate, getSlots, H, M, ROW_COLORS, getToday } from '../lib/helpers'
+import { formatDate, getSlots, H, M, ROW_COLORS, sortByCreatedAsc, getToday } from '../lib/helpers'
 import { X, Download } from 'lucide-react'
 
 export default function ExportModal({ profile }) {
@@ -65,7 +65,7 @@ export default function ExportModal({ profile }) {
     const { from, to } = getDateRange()
     return activities.filter(a =>
       a.date >= from && a.date <= to && catFilter.has(a.category)
-    ).sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+    ).sort(sortByCreatedAsc)
   }
 
   function toggleCat(catId) {
@@ -91,7 +91,7 @@ export default function ExportModal({ profile }) {
 
       const hasDur = includeDur
       const hdrFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } }
-      const hdrFont = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
+      const hdrFont = { name: 'Calibri', bold: true, size: 12, color: { argb: 'FFFFFFFF' } }
       const bd = { style: 'thin', color: { argb: 'FFD0D0D0' } }
       const allBd = { top: bd, left: bd, bottom: bd, right: bd }
 
@@ -121,7 +121,7 @@ export default function ExportModal({ profile }) {
           ws.columns = cols; stHdr(ws, cols)
           let rn = 2
           slots.forEach((slot, si) => {
-            const sa = dayActs.filter(a => a.slot === slot).sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+            const sa = dayActs.filter(a => a.slot === slot).sort(sortByCreatedAsc)
             if (!sa.length) return
             const rf = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_COLORS[si % ROW_COLORS.length] } }
             if (hasDur) {
@@ -167,7 +167,7 @@ export default function ExportModal({ profile }) {
           }
           hdRow.height = 18
           slots.forEach((slot, si) => {
-            const sa = dayActs.filter(a => a.slot === slot).sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+            const sa = dayActs.filter(a => a.slot === slot).sort(sortByCreatedAsc)
             if (!sa.length) return
             const rf = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_COLORS[si % ROW_COLORS.length] } }
             if (hasDur) {
