@@ -14,8 +14,7 @@ export default function Settings({ profile, onUpdate }) {
   const [role, setRole] = useState(settings?.role || '')
   const [workStart, setWorkStart] = useState(settings?.workStart || '09:00')
   const [workEnd, setWorkEnd] = useState(settings?.workEnd || '18:00')
-  const [breakStart, setBreakStart] = useState(settings?.breakStart || '')
-  const [breakEnd, setBreakEnd] = useState(settings?.breakEnd || '')
+  const [breakSlots, setBreakSlots] = useState(settings?.breakSlots || [])
   const [team, setTeam] = useState(settings?.team || '')
   const [notif, setNotif] = useState(settings?.notif || false)
   const [selectedTheme, setSelectedTheme] = useState(
@@ -30,8 +29,7 @@ export default function Settings({ profile, onUpdate }) {
     setRole(profile.settings?.role || '')
     setWorkStart(profile.settings?.workStart || '09:00')
     setWorkEnd(profile.settings?.workEnd || '18:00')
-    setBreakStart(profile.settings?.breakStart || '')
-    setBreakEnd(profile.settings?.breakEnd || '')
+    setBreakSlots(profile.settings?.breakSlots || [])
     setTeam(profile.settings?.team || '')
     setNotif(profile.settings?.notif || false)
     const ti = THEMES.findIndex(t => t.ac === (profile.settings?.theme?.ac || '#00d4aa'))
@@ -48,12 +46,10 @@ export default function Settings({ profile, onUpdate }) {
 
   async function saveSettings() {
     if (workStart >= workEnd) { toast('End time must be after start', 'er'); return }
-    const hasBreak = breakStart && breakEnd
-    if (hasBreak && breakEnd <= breakStart) {
-      toast('Break end must be after break start', 'er'); return
-    }
-    if (hasBreak && (breakStart < workStart || breakEnd > workEnd)) {
-      toast('Break must be within working hours', 'er'); return
+    for (const bs of breakSlots) {
+      if (!bs.start || !bs.end) { toast('Each break slot needs a start and end time', 'er'); return }
+      if (bs.end <= bs.start) { toast('Break end must be after start for each slot', 'er'); return }
+      if (bs.start < workStart || bs.end > workEnd) { toast('All break slots must be within working hours', 'er'); return }
     }
     setSaving(true)
     const theme = selectedTheme >= 0 ? THEMES[selectedTheme] : (settings?.theme || THEMES[0])
@@ -61,8 +57,7 @@ export default function Settings({ profile, onUpdate }) {
     const newSettings = {
       ...settings,
       workStart, workEnd,
-      breakStart: hasBreak ? breakStart : '',
-      breakEnd: hasBreak ? breakEnd : '',
+      breakSlots,
       team: team.trim() || 'My Team',
       role: role.trim(), notif, theme,
     }
@@ -160,18 +155,29 @@ export default function Settings({ profile, onUpdate }) {
               <input type="time" value={workEnd} onChange={e => { setWorkEnd(e.target.value); markDirty() }} />
             </div>
           </div>
-          <div className="tc2" style={{ marginTop: 12 }}>
-            <div className="fd"><label>Break Start <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
-              <input type="time" value={breakStart} onChange={e => { setBreakStart(e.target.value); markDirty() }} />
-            </div>
-            <div className="fd"><label>Break End <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
-              <input type="time" value={breakEnd} onChange={e => { setBreakEnd(e.target.value); markDirty() }} />
-            </div>
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: 8 }}>
-            {breakStart && breakEnd
-              ? 'Break slots are auto-blocked on your timeline each day.'
-              : 'Leave blank for no scheduled break.'}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx2)', marginBottom: 8 }}>Break Slots <span style={{ color: 'var(--tx3)', fontWeight: 400, fontSize: 11 }}>(optional)</span></div>
+            {breakSlots.map((bs, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <input type="time" value={bs.start} onChange={e => {
+                  const next = [...breakSlots]
+                  next[i] = { ...next[i], start: e.target.value }
+                  setBreakSlots(next); markDirty()
+                }} style={{ flex: 1 }} />
+                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
+                <input type="time" value={bs.end} onChange={e => {
+                  const next = [...breakSlots]
+                  next[i] = { ...next[i], end: e.target.value }
+                  setBreakSlots(next); markDirty()
+                }} style={{ flex: 1 }} />
+                <button className="ib del" onClick={() => {
+                  setBreakSlots(breakSlots.filter((_, j) => j !== i)); markDirty()
+                }} style={{ flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+            <button className="btn bs bsm" onClick={() => {
+              setBreakSlots([...breakSlots, { start: '', end: '' }]); markDirty()
+            }} style={{ marginTop: 4 }}>+ Add Break Slot</button>
           </div>
         </div>
       </div>

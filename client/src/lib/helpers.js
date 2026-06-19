@@ -37,24 +37,25 @@ export function timeToMin(t) {
   return h * 60 + m
 }
 
-// Given a break window (settings.breakStart / settings.breakEnd) and the workday
-// slot list, return the hourly slots that overlap the break with the overlap
-// duration in minutes. Partial overlaps (e.g. 13:30–14:00 break) report the
-// correct overlap minutes. Empty/invalid break window -> [].
+// Given break slots array [{start, end}, ...] and the workday slot list, return
+// the hourly slots that overlap each break, with overlap duration in minutes.
+// Empty/invalid breakSlots -> [].
 export function getBreakSlots(settings, allSlots) {
-  const bs = settings?.breakStart
-  const be = settings?.breakEnd
-  if (!bs || !be) return []
-  const bStart = timeToMin(bs)
-  const bEnd = timeToMin(be)
-  if (bEnd <= bStart) return []
+  const slots = settings?.breakSlots
+  if (!slots || !Array.isArray(slots) || !slots.length) return []
   const out = []
-  for (const slot of allSlots) {
-    const [s, e] = slot.split(' - ')
-    const sStart = timeToMin(s)
-    const sEnd = timeToMin(e)
-    const overlap = Math.min(bEnd, sEnd) - Math.max(bStart, sStart)
-    if (overlap > 0) out.push({ slot, duration: overlap })
+  for (const { start, end } of slots) {
+    if (!start || !end) continue
+    const bStart = timeToMin(start)
+    const bEnd = timeToMin(end)
+    if (bEnd <= bStart) continue
+    for (const slot of allSlots) {
+      const [s, e] = slot.split(' - ')
+      const sStart = timeToMin(s)
+      const sEnd = timeToMin(e)
+      const overlap = Math.min(bEnd, sEnd) - Math.max(bStart, sStart)
+      if (overlap > 0) out.push({ slot, duration: overlap })
+    }
   }
   return out
 }

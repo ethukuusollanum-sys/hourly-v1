@@ -9,8 +9,7 @@ export default function OnboardingPage({ profile, onComplete }) {
   const { toast } = useToast()
   const [workStart, setWorkStart] = useState('09:00')
   const [workEnd, setWorkEnd] = useState('18:00')
-  const [breakStart, setBreakStart] = useState('')
-  const [breakEnd, setBreakEnd] = useState('')
+  const [breakSlots, setBreakSlots] = useState([])
   const [team, setTeam] = useState('')
   const [role, setRole] = useState('')
   const [notif, setNotif] = useState(false)
@@ -18,19 +17,14 @@ export default function OnboardingPage({ profile, onComplete }) {
 
   async function finish() {
     if (workStart >= workEnd) { toast('End time must be after start', 'er'); return }
-    // Break is optional, but if set it must be valid and fall within work hours.
-    const hasBreak = breakStart && breakEnd
-    if (hasBreak && breakEnd <= breakStart) {
-      toast('Break end must be after break start', 'er'); return
-    }
-    if (hasBreak && (breakStart < workStart || breakEnd > workEnd)) {
-      toast('Break must be within working hours', 'er'); return
+    for (const bs of breakSlots) {
+      if (!bs.start || !bs.end) { toast('Each break slot needs a start and end time', 'er'); return }
+      if (bs.end <= bs.start) { toast('Break end must be after start for each slot', 'er'); return }
+      if (bs.start < workStart || bs.end > workEnd) { toast('All break slots must be within working hours', 'er'); return }
     }
     setSaving(true)
     const settings = {
-      workStart, workEnd,
-      breakStart: hasBreak ? breakStart : '',
-      breakEnd: hasBreak ? breakEnd : '',
+      workStart, workEnd, breakSlots,
       team: team.trim() || 'My Team', role: role.trim(), notif,
     }
     const { error } = await supabase
@@ -66,15 +60,22 @@ export default function OnboardingPage({ profile, onComplete }) {
             <div className="fd"><label>Work Start</label><input type="time" value={workStart} onChange={e => setWorkStart(e.target.value)} /></div>
             <div className="fd"><label>Work End</label><input type="time" value={workEnd} onChange={e => setWorkEnd(e.target.value)} /></div>
           </div>
-          <div className="tc2">
-            <div className="fd"><label>Break Start <span style={{ color: 'var(--tx3)' }}>(optional)</span></label><input type="time" value={breakStart} onChange={e => setBreakStart(e.target.value)} /></div>
-            <div className="fd"><label>Break End <span style={{ color: 'var(--tx3)' }}>(optional)</span></label><input type="time" value={breakEnd} onChange={e => setBreakEnd(e.target.value)} /></div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 6 }}>Break Slots <span style={{ color: 'var(--tx3)', fontWeight: 400 }}>(optional)</span></div>
+            {breakSlots.map((bs, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <input type="time" value={bs.start} onChange={e => {
+                  const next = [...breakSlots]; next[i] = { ...next[i], start: e.target.value }; setBreakSlots(next)
+                }} style={{ flex: 1 }} />
+                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
+                <input type="time" value={bs.end} onChange={e => {
+                  const next = [...breakSlots]; next[i] = { ...next[i], end: e.target.value }; setBreakSlots(next)
+                }} style={{ flex: 1 }} />
+                <button className="ib del" onClick={() => setBreakSlots(breakSlots.filter((_, j) => j !== i))} style={{ flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+            <button className="btn bs bsm" onClick={() => setBreakSlots([...breakSlots, { start: '', end: '' }])} style={{ marginTop: 2 }}>+ Add Break Slot</button>
           </div>
-          {breakStart && breakEnd && (
-            <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: -6 }}>
-              Break slots are auto-blocked on your timeline each day.
-            </div>
-          )}
           <div className="fd"><label>Team / Workspace Name</label>
             <input type="text" placeholder="e.g. Engineering, Design…" maxLength={40} value={team} onChange={e => setTeam(e.target.value)} />
           </div>

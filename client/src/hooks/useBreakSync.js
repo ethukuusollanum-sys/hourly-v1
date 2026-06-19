@@ -2,19 +2,10 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '../config/supabase'
 import { getBreakSlots, getSlots, getToday } from '../lib/helpers'
 
-// Reconcile auto-generated break records for TODAY against the user's
-// configured break window. Only rows with is_break=true are managed, so manual
-// Break-category logs are never touched. The diff is idempotent, so the realtime
-// refetch in ActivitiesContext (which fires after each write) cannot loop.
-//
-// @param {Object|null} user  - auth user (from useAuth)
-// @param {Object} settings   - profile.settings (workStart/workEnd/breakStart/breakEnd)
-// @param {Array}  activities - all activities (we only act on today's is_break rows)
 export default function useBreakSync(user, settings, activities) {
   const runningRef = useRef(false)
 
-  const breakStart = settings?.breakStart
-  const breakEnd = settings?.breakEnd
+  const breakSlots = settings?.breakSlots
   const workStart = settings?.workStart || '09:00'
   const workEnd = settings?.workEnd || '18:00'
 
@@ -22,7 +13,7 @@ export default function useBreakSync(user, settings, activities) {
     if (!user) return
     if (runningRef.current) return
     const slots = getSlots(workStart, workEnd)
-    const desired = getBreakSlots({ breakStart, breakEnd }, slots)
+    const desired = getBreakSlots({ breakSlots }, slots)
     const today = getToday()
 
     const todayBreakRows = activities.filter(
@@ -35,7 +26,6 @@ export default function useBreakSync(user, settings, activities) {
     const toAdd = desired.filter(d => !existingSlots.includes(d.slot))
     const toRemove = todayBreakRows.filter(a => !desiredSlots.includes(a.slot))
 
-    // Already in sync — nothing to write, so no realtime refetch is triggered.
     if (!toAdd.length && !toRemove.length) return
 
     runningRef.current = true
@@ -68,5 +58,5 @@ export default function useBreakSync(user, settings, activities) {
         runningRef.current = false
       }
     })()
-  }, [user, breakStart, breakEnd, workStart, workEnd, activities])
+  }, [user, breakSlots, workStart, workEnd, activities])
 }
