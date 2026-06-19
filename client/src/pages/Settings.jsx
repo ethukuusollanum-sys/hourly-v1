@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { THEMES, applyTheme, esc, hexToRgba } from '../lib/helpers'
 import { Camera, LogOut, Pencil, Trash2 } from 'lucide-react'
+import TimePicker from '../components/TimePicker'
 
 export default function Settings({ profile, onUpdate }) {
   const { user } = useAuth()
@@ -149,25 +150,25 @@ export default function Settings({ profile, onUpdate }) {
         <div style={{ padding: 18 }}>
           <div className="tc2">
             <div className="fd"><label>Start</label>
-              <input type="time" value={workStart} onChange={e => { setWorkStart(e.target.value); markDirty() }} />
+              <TimePicker value={workStart} onChange={v => { setWorkStart(v); markDirty() }} style={{ width: '100%' }} />
             </div>
             <div className="fd"><label>End</label>
-              <input type="time" value={workEnd} onChange={e => { setWorkEnd(e.target.value); markDirty() }} />
+              <TimePicker value={workEnd} onChange={v => { setWorkEnd(v); markDirty() }} style={{ width: '100%' }} />
             </div>
           </div>
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx2)', marginBottom: 8 }}>Break Slots <span style={{ color: 'var(--tx3)', fontWeight: 400, fontSize: 11 }}>(optional)</span></div>
             {breakSlots.map((bs, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <input type="time" value={bs.start} onChange={e => {
+                <TimePicker value={bs.start} onChange={v => {
                   const next = [...breakSlots]
-                  next[i] = { ...next[i], start: e.target.value }
+                  next[i] = { ...next[i], start: v }
                   setBreakSlots(next); markDirty()
                 }} style={{ flex: 1 }} />
                 <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
-                <input type="time" value={bs.end} onChange={e => {
+                <TimePicker value={bs.end} onChange={v => {
                   const next = [...breakSlots]
-                  next[i] = { ...next[i], end: e.target.value }
+                  next[i] = { ...next[i], end: v }
                   setBreakSlots(next); markDirty()
                 }} style={{ flex: 1 }} />
                 <button className="ib del" onClick={() => {

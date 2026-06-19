@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { DEFAULT_CATEGORIES } from '../lib/helpers'
+import TimePicker from '../components/TimePicker'
 
 export default function OnboardingPage({ profile, onComplete }) {
   const { user } = useAuth()
@@ -57,19 +58,19 @@ export default function OnboardingPage({ profile, onComplete }) {
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="tc2">
-            <div className="fd"><label>Work Start</label><input type="time" value={workStart} onChange={e => setWorkStart(e.target.value)} /></div>
-            <div className="fd"><label>Work End</label><input type="time" value={workEnd} onChange={e => setWorkEnd(e.target.value)} /></div>
+            <div className="fd"><label>Work Start</label><TimePicker value={workStart} onChange={v => setWorkStart(v)} /></div>
+            <div className="fd"><label>Work End</label><TimePicker value={workEnd} onChange={v => setWorkEnd(v)} /></div>
           </div>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 6 }}>Break Slots <span style={{ color: 'var(--tx3)', fontWeight: 400 }}>(optional)</span></div>
             {breakSlots.map((bs, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <input type="time" value={bs.start} onChange={e => {
-                  const next = [...breakSlots]; next[i] = { ...next[i], start: e.target.value }; setBreakSlots(next)
+                <TimePicker value={bs.start} onChange={v => {
+                  const next = [...breakSlots]; next[i] = { ...next[i], start: v }; setBreakSlots(next)
                 }} style={{ flex: 1 }} />
                 <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
-                <input type="time" value={bs.end} onChange={e => {
-                  const next = [...breakSlots]; next[i] = { ...next[i], end: e.target.value }; setBreakSlots(next)
+                <TimePicker value={bs.end} onChange={v => {
+                  const next = [...breakSlots]; next[i] = { ...next[i], end: v }; setBreakSlots(next)
                 }} style={{ flex: 1 }} />
                 <button className="ib del" onClick={() => setBreakSlots(breakSlots.filter((_, j) => j !== i))} style={{ flexShrink: 0 }}>✕</button>
               </div>

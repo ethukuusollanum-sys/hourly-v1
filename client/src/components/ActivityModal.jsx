@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
@@ -13,6 +13,7 @@ export default function ActivityModal({ profile }) {
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState(null)
   const [slot, setSlot] = useState(null)
+  const [slotDate, setSlotDate] = useState(null)
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [duration, setDuration] = useState('60')
@@ -20,6 +21,15 @@ export default function ActivityModal({ profile }) {
   const [saving, setSaving] = useState(false)
 
   const categories = profile?.categories || []
+  const slotUsed = useMemo(() => {
+    if (!slot || !slotDate) return 0
+    return activities
+      .filter(a => a.date === slotDate && a.slot === slot && a.id !== editId)
+      .reduce((sum, a) => sum + (a.duration || 0), 0)
+  }, [slot, slotDate, editId, activities])
+  const remaining = Math.max(0, 60 - slotUsed)
+  const durNum = parseInt(duration) || 0
+  const isOverLimit = slotUsed + durNum > 60
 
   function openModal(slotVal, editData = null) {
     setSlot(slotVal)
@@ -29,12 +39,18 @@ export default function ActivityModal({ profile }) {
       setCategory(editData.category || (categories[0]?.id || 'Work'))
       setDuration(String(editData.duration || 60))
       setNotes(editData.notes || '')
+      setSlotDate(editData.date)
     } else {
+      const today = getToday()
+      const used = activities
+        .filter(a => a.date === today && a.slot === slotVal)
+        .reduce((sum, a) => sum + (a.duration || 0), 0)
       setEditId(null)
       setName('')
       setCategory(categories[0]?.id || 'Work')
-      setDuration('60')
+      setDuration(String(Math.max(1, 60 - used)))
       setNotes('')
+      setSlotDate(today)
     }
     setOpen(true)
   }
@@ -47,8 +63,9 @@ export default function ActivityModal({ profile }) {
 
   async function save() {
     if (!name.trim()) { toast('Activity name is required', 'er'); return }
-    setSaving(true)
     const dur = parseInt(duration) || 60
+    if (slotUsed + dur > 60) { toast('Maximum 60 minutes per slot exceeded', 'er'); setSaving(false); return }
+    setSaving(true)
     const today = getToday()
 
     try {
@@ -152,7 +169,16 @@ export default function ActivityModal({ profile }) {
                 value={duration}
                 onChange={e => setDuration(e.target.value)}
                 maxLength={3}
+                style={isOverLimit ? { borderColor: 'var(--red)' } : undefined}
               />
+              <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>Used: {slotUsed}m</span>
+                <span>·</span>
+                <span>Limit: 60m</span>
+                <span>·</span>
+                <span style={{ color: remaining <= 5 ? 'var(--red)' : remaining <= 15 ? '#e6a817' : 'var(--ac)', fontWeight: 600 }}>Remaining: {remaining}m</span>
+              </div>
+              {isOverLimit && <div className="errmsg">Maximum 60 minutes per slot exceeded</div>}
             </div>
           </div>
           <div className="fd">

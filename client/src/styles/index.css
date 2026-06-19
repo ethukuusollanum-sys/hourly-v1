@@ -215,3 +215,16 @@ input::placeholder,textarea::placeholder{color:var(--tx3)}
   #bnav{display:none!important}
   #toasts{bottom:20px}
 }
+
+/* ── Flatpickr theme override (matches dark theme) ── */
+.flatpickr-calendar{background:var(--sf)!important;border:1px solid var(--bd2)!important;border-radius:var(--rs)!important;box-shadow:0 8px 24px rgba(0,0,0,.35)!important}
+.flatpickr-calendar:before,.flatpickr-calendar:after{display:none!important}
+.flatpickr-time{max-height:none!important;border:none!important}
+.flatpickr-time input{color:var(--tx)!important;background:var(--sf2)!important;border-radius:6px!important;font-size:13px!important;font-family:var(--fn)!important}
+.flatpickr-time .flatpickr-time-separator,.flatpickr-time .flatpickr-am-pm{color:var(--tx2)!important}
+.flatpickr-time .flatpickr-am-pm:hover,.flatpickr-time .flatpickr-am-pm:focus{background:var(--acbg)!important;color:var(--ac)!important}
+.flatpickr-time input:hover,.flatpickr-time input:focus{background:var(--sf3)!important}
+.flatpickr-time input.flatpickr-hour{font-weight:700}
+.numInputWrapper span{display:none!important}
+.flatpickr-calendar.open{animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
