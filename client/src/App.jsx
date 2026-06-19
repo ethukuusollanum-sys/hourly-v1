@@ -10,7 +10,6 @@ import Dashboard from './pages/Dashboard'
 import DailyLogs from './pages/DailyLogs'
 import TeamView from './pages/TeamView'
 import WeeklyReport from './pages/WeeklyReport'
-import Categories from './pages/Categories'
 import Settings from './pages/Settings'
 import Layout from './components/Layout'
 import LoadingScreen from './components/LoadingScreen'
@@ -86,7 +85,6 @@ export default function App() {
           <Route path="/daily" element={<DailyLogs profile={profile} />} />
           <Route path="/team" element={<TeamView profile={profile} />} />
           <Route path="/weekly" element={<WeeklyReport profile={profile} />} />
-          <Route path="/categories" element={<Categories profile={profile} onUpdate={updateProfile} />} />
           <Route path="/settings" element={<Settings profile={profile} onUpdate={updateProfile} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

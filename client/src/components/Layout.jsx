@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { esc } from '../lib/helpers'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, Tag, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight, RefreshCw } from 'lucide-react'
 import ActivityModal from './ActivityModal'
 import ExportModal from './ExportModal'
 import CategoryModal from './CategoryModal'
@@ -91,7 +91,6 @@ export default function Layout({ children, profile, onProfileUpdate }) {
     case '/daily': pageTitle = 'Daily Logs'; break
     case '/team': pageTitle = 'Team View'; break
     case '/weekly': pageTitle = 'Weekly Report'; break
-    case '/categories': pageTitle = 'Categories'; break
     case '/settings': pageTitle = 'Settings'; break
   }
 
@@ -130,9 +129,6 @@ export default function Layout({ children, profile, onProfileUpdate }) {
           })}
           <div className="sep" />
           <div className="nl">Account</div>
-          <div className={`ni${location.pathname === '/categories' ? ' on' : ''}`} onClick={() => navigate('/categories')}>
-            <span className="nic"><Tag size={16} /></span>Categories
-          </div>
           <div className={`ni${location.pathname === '/settings' ? ' on' : ''}`} onClick={() => navigate('/settings')}>
             <span className="nic"><Settings size={16} /></span>Settings
           </div>
