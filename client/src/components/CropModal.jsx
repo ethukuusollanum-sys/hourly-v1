@@ -1,8 +1,42 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
+import Cropper from 'react-easy-crop'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../config/supabase'
 import { ZoomIn, ZoomOut } from 'lucide-react'
+
+function createImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.addEventListener('load', () => resolve(img))
+    img.addEventListener('error', reject)
+    img.src = url
+  })
+}
+
+function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
+  return new Promise(async (resolve, reject) => {
+    const image = await createImage(imageSrc)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    const size = 400
+    canvas.width = size
+    canvas.height = size
+
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+    ctx.clip()
+
+    const sx = pixelCrop.x * (image.naturalWidth / image.width)
+    const sy = pixelCrop.y * (image.naturalHeight / image.height)
+    const sw = pixelCrop.width * (image.naturalWidth / image.width)
+    const sh = pixelCrop.height * (image.naturalHeight / image.height)
+
+    ctx.drawImage(image, Math.max(0, sx), Math.max(0, sy), Math.max(1, sw), Math.max(1, sh), 0, 0, size, size)
+    canvas.toBlob(blob => resolve(blob), 'image/png')
+  })
+}
 
 export default function CropModal({ profile, onUpdate }) {
   const { user } = useAuth()
@@ -10,20 +44,20 @@ export default function CropModal({ profile, onUpdate }) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState(null)
   const [imgSrc, setImgSrc] = useState('')
-  const [scale, setScale] = useState(100)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const imgRef = useRef(null)
-  const areaRef = useRef(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [cropShape, setCropShape] = useState('round')
+  const [preview, setPreview] = useState(null)
 
   function openModal(input) {
     const f = input.files?.[0]
     if (!f) return
     if (f.size > 10 * 1024 * 1024) { toast('Image must be under 10MB', 'er'); return }
     setFile(f)
-    setPos({ x: 0, y: 0 })
-    setScale(100)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setCropShape('round')
+    setPreview(null)
     const reader = new FileReader()
     reader.onload = e => setImgSrc(e.target.result)
     reader.readAsDataURL(f)
@@ -31,139 +65,126 @@ export default function CropModal({ profile, onUpdate }) {
     input.value = ''
   }
 
-  useEffect(() => {
-    if (!dragging) return
-    function onUp() { setDragging(false) }
-    window.addEventListener('mouseup', onUp)
-    window.addEventListener('touchend', onUp)
-    return () => {
-      window.removeEventListener('mouseup', onUp)
-      window.removeEventListener('touchend', onUp)
+  const [cropPixels, setCropData] = useState(null)
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCropData(croppedAreaPixels)
+  }, [])
+
+  async function handleSave() {
+    if (!imgSrc || !cropPixels) return
+    setPreview('loading')
+    try {
+      const blob = await getCroppedImg(imgSrc, cropPixels)
+      setPreview(URL.createObjectURL(blob))
+    } catch {
+      toast('Crop failed. Try again.', 'er')
+      setPreview(null)
     }
-  }, [dragging])
-
-  function onDragStart(e) {
-    const cx = e.clientX ?? e.touches[0].clientX
-    const cy = e.clientY ?? e.touches[0].clientY
-    setDragging(true)
-    setDragStart({ x: cx - pos.x, y: cy - pos.y })
   }
 
-  function onDragMove(e) {
-    if (!dragging) return
-    const cx = e.clientX ?? e.touches?.[0]?.clientX
-    const cy = e.clientY ?? e.touches?.[0]?.clientY
-    if (cx == null) return
-    setPos({ x: cx - dragStart.x, y: cy - dragStart.y })
-  }
-
-  function onWheel(e) {
-    e.preventDefault()
-    setScale(s => Math.min(300, Math.max(100, s + (e.deltaY < 0 ? 8 : -8))))
-  }
-
-  async function save() {
-    if (!file || !imgRef.current || !areaRef.current) return
-    const size = 400
-    const canvas = document.createElement('canvas')
-    canvas.width = size
-    canvas.height = size
-    const ctx = canvas.getContext('2d')
-    ctx.beginPath()
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
-    ctx.clip()
-
-    const areaRect = areaRef.current.getBoundingClientRect()
-    const imgRect = imgRef.current.getBoundingClientRect()
-    const sx = (areaRect.left - imgRect.left) * (imgRef.current.naturalWidth / imgRect.width)
-    const sy = (areaRect.top - imgRect.top) * (imgRef.current.naturalHeight / imgRect.height)
-    const sw = areaRect.width * (imgRef.current.naturalWidth / imgRect.width)
-    const sh = areaRect.height * (imgRef.current.naturalHeight / imgRect.height)
-
-    ctx.drawImage(imgRef.current, Math.max(0, sx), Math.max(0, sy), Math.max(1, sw), Math.max(1, sh), 0, 0, size, size)
-
+  async function handleUpload() {
+    if (!preview || preview === 'loading' || !file) return
     setOpen(false)
     toast('Uploading photo…', 'inf')
 
-    canvas.toBlob(async blob => {
-      try {
-        const ext = file.name.split('.').pop() || 'png'
-        const filePath = `avatars/${user.id}.${ext}`
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, blob, { upsert: true, contentType: `image/${ext}` })
-        if (uploadError) throw uploadError
+    try {
+      const blob = await fetch(preview).then(r => r.blob())
+      const ext = file.name.split('.').pop() || 'png'
+      const filePath = `avatars/${user.id}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: `image/${ext}` })
+      if (uploadError) throw uploadError
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath)
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
 
-        await onUpdate({ photo_url: publicUrl })
-        toast('Profile photo updated! ✓', 'ok')
-      } catch (err) {
-        toast('Upload failed. Check Storage bucket "avatars" exists.', 'er')
-        console.error(err)
-      }
-    }, 'image/png')
+      await onUpdate({ photo_url: publicUrl })
+      toast('Profile photo updated! ✓', 'ok')
+    } catch (err) {
+      toast('Upload failed. Check Storage bucket "avatars" exists.', 'er')
+      console.error(err)
+    }
   }
 
-  // Expose to window
   if (typeof window !== 'undefined') {
     window.__cropModal = { open: openModal, close: () => setOpen(false) }
   }
 
   if (!open) return null
 
-  const scalePercent = scale / 100
-
   return (
     <div className="ov">
       <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
-        <div className="mh"><div className="mt2">Crop Profile Photo</div></div>
-        <div className="mb2">
-          <div
-            id="crop_area"
-            ref={areaRef}
-            onMouseDown={onDragStart}
-            onMouseMove={onDragMove}
-            onTouchStart={onDragStart}
-            onTouchMove={onDragMove}
-            onWheel={onWheel}
-            style={{ userSelect: 'none', cursor: dragging ? 'grabbing' : 'grab' }}
-          >
-            <img
-              ref={imgRef}
-              id="crop_img"
-              src={imgSrc}
-              alt="crop"
-              style={{
-                transform: `translate(${pos.x}px, ${pos.y}px) scale(${scalePercent})`,
-                transformOrigin: 'center center',
-              }}
-            />
-            <div className="crop-overlay">
-              <div className="crop-circle"></div>
+        <div className="mh">
+          <div className="mt2">{preview ? 'Preview' : 'Crop Photo'}</div>
+        </div>
+
+        {!preview ? (
+          <div className="mb2">
+            <div id="crop_area">
+              <Cropper
+                image={imgSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape={cropShape}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                style={{ containerStyle: { width: '100%', height: '100%', position: 'relative' } }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+              <ZoomOut size={14} color="var(--tx3)" />
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.01"
+                value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, height: 4, accentColor: 'var(--ac)' }}
+              />
+              <ZoomIn size={14} color="var(--tx3)" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+              <button
+                className={`btn ${cropShape === 'round' ? 'bp' : 'bs'} bsm`}
+                onClick={() => setCropShape('round')}
+              >Circle</button>
+              <button
+                className={`btn ${cropShape === 'rect' ? 'bp' : 'bs'} bsm`}
+                onClick={() => setCropShape('rect')}
+              >Square</button>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-            <ZoomOut size={14} color="var(--tx3)" />
-            <input
-              type="range"
-              min="100"
-              max="300"
-              value={scale}
-              onChange={e => setScale(parseInt(e.target.value))}
-              style={{ flex: 1, height: 4, accentColor: 'var(--ac)' }}
-            />
-            <ZoomIn size={14} color="var(--tx3)" />
+        ) : (
+          <div className="mb2" style={{ textAlign: 'center' }}>
+            {preview === 'loading' ? (
+              <div style={{ padding: 40, color: 'var(--tx3)' }}>Cropping…</div>
+            ) : (
+              <img src={preview} alt="preview" style={{ width: 200, height: 200, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--bd)' }} />
+            )}
           </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--tx3)', textAlign: 'center', marginTop: 6 }}>
-            Drag to reposition · Scroll to zoom
-          </div>
-        </div>
+        )}
+
         <div className="mf">
-          <button className="btn bg2 bsm" onClick={() => setOpen(false)}>Cancel</button>
-          <button className="btn bp bsm" onClick={save}>Use Photo</button>
+          {!preview ? (
+            <>
+              <button className="btn bg2 bsm" onClick={() => setOpen(false)}>Cancel</button>
+              <button className="btn bp bsm" onClick={handleSave}>Crop & Preview</button>
+            </>
+          ) : (
+            <>
+              <button className="btn bg2 bsm" onClick={() => { setPreview(null); URL.revokeObjectURL(preview) }}>Back</button>
+              <button className="btn bp bsm" onClick={handleUpload} disabled={preview === 'loading'}>
+                {preview === 'loading' ? 'Cropping…' : 'Upload'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -259,6 +259,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
         <AccSwitcher
           accounts={savedAccounts}
           currentUid={user?.id}
+          currentUser={{ ...userData, uid: user?.id }}
           onClose={() => setShowAccSwitcher(false)}
           onLogout={doLogout}
         />

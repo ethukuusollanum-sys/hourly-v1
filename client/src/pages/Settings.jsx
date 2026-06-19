@@ -103,15 +103,20 @@ export default function Settings({ profile, onUpdate }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{esc(profile?.name || user?.email)}</div>
               <div style={{ fontSize: '11.5px', color: 'var(--tx2)', marginTop: 2 }}>{esc(user?.email)}</div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4 }}>Click avatar to change photo</div>
-              {profile?.photo_url && (
-                <button onClick={async () => {
-                  await onUpdate({ photo_url: '' })
-                  toast('Profile photo removed.', 'inf')
-                }} style={{ background: 'none', border: 'none', color: 'var(--red)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--fn)', marginTop: 4 }}>
-                  Remove photo
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button onClick={() => document.getElementById('pic_input')?.click()}
+                  style={{ background: 'none', border: 'none', color: 'var(--ac)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--fn)' }}>
+                  {profile?.photo_url ? 'Replace photo' : 'Add photo'}
                 </button>
-              )}
+                {profile?.photo_url && (
+                  <button onClick={async () => {
+                    await onUpdate({ photo_url: '' })
+                    toast('Profile photo removed.', 'inf')
+                  }} style={{ background: 'none', border: 'none', color: 'var(--red)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--fn)' }}>
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="fd">

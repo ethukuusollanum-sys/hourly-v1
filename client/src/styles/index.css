@@ -139,10 +139,7 @@ input::placeholder,textarea::placeholder{color:var(--tx3)}
 .acc-item:hover .acc-remove{opacity:1}
 .pic-wrap{position:relative;display:inline-flex;cursor:pointer}
 .pic-badge{position:absolute;bottom:2px;right:2px;width:24px;height:24px;background:var(--ac);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--sf);cursor:pointer}
-#crop_area{width:100%;aspect-ratio:1;overflow:hidden;position:relative;background:#000;border-radius:var(--rs);cursor:move;user-select:none}
-#crop_img{position:absolute;transform-origin:center;transition:none}
-.crop-overlay{position:absolute;inset:0;pointer-events:none}
-.crop-circle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;aspect-ratio:1;border:2px solid var(--ac);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55)}
+#crop_area{width:100%;aspect-ratio:1;position:relative;background:#000;border-radius:var(--rs);overflow:hidden}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-hdr{font-size:10.5px;font-weight:700;color:var(--tx3);text-align:center;padding:4px 0}
