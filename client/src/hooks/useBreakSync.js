@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '../config/supabase'
 import { getBreakSlots, getSlots, getToday } from '../lib/helpers'
 
-export default function useBreakSync(user, settings, activities) {
+export default function useBreakSync(user, settings, activities, setActivities) {
   const runningRef = useRef(false)
 
   const breakSlots = settings?.breakSlots
@@ -11,6 +11,7 @@ export default function useBreakSync(user, settings, activities) {
 
   useEffect(() => {
     if (!user) return
+    if (!setActivities) return
     if (runningRef.current) return
     const slots = getSlots(workStart, workEnd)
     const desired = getBreakSlots({ breakSlots }, slots)
@@ -32,13 +33,16 @@ export default function useBreakSync(user, settings, activities) {
     ;(async () => {
       try {
         if (toRemove.length) {
-          await supabase
+          const { error } = await supabase
             .from('activities')
             .delete()
             .in('id', toRemove.map(a => a.id))
+          if (!error) {
+            setActivities(prev => prev.filter(a => !toRemove.some(r => r.id === a.id)))
+          }
         }
         if (toAdd.length) {
-          await supabase.from('activities').insert(
+          const { data, error } = await supabase.from('activities').insert(
             toAdd.map(d => ({
               user_id: user.id,
               name: 'Break',
@@ -50,7 +54,10 @@ export default function useBreakSync(user, settings, activities) {
               is_break: true,
               created_at: new Date().toISOString(),
             }))
-          )
+          ).select()
+          if (!error && data) {
+            setActivities(prev => [...prev, ...data])
+          }
         }
       } catch (err) {
         console.error('break sync failed', err)
@@ -58,5 +65,5 @@ export default function useBreakSync(user, settings, activities) {
         runningRef.current = false
       }
     })()
-  }, [user, breakSlots, workStart, workEnd, activities])
+  }, [user, breakSlots, workStart, workEnd, activities, setActivities])
 }

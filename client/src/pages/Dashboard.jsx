@@ -1,6 +1,6 @@
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getBreakSlots, getToday, H, M, hexToRgba, esc, sortByCreatedAsc } from '../lib/helpers'
+import { getSlots, getBreakSlots, getSlotDuration, getToday, H, M, hexToRgba, esc, sortByCreatedAsc, calculateRemainingTime } from '../lib/helpers'
 import { supabase } from '../config/supabase'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -23,7 +23,7 @@ export default function Dashboard({ profile }) {
   const tm = ta.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const slots = getSlots(settings.workStart || '09:00', settings.workEnd || '18:00')
   // Reconcile auto-break rows for today against the configured break window.
-  useBreakSync(user, settings, activities)
+  useBreakSync(user, settings, activities, setActivities)
   const breakSlots = new Set(getBreakSlots(settings, slots).map(d => d.slot))
   const filled = new Set(ta.map(a => a.slot))
   const nh = new Date().getHours().toString().padStart(2, '0')
@@ -91,20 +91,34 @@ export default function Dashboard({ profile }) {
             const isn = slot.split(':')[0] === nh
             const isBreak = breakSlots.has(slot)
             const tasks = sa.filter(a => !a.is_break)
+            const slotBreaks = sa.filter(a => a.is_break)
+            const slotLimit = getSlotDuration(slot)
+            const breakMins = slotBreaks.reduce((s, a) => s + (a.duration || 0), 0)
+            const logMins = tasks.reduce((s, a) => s + (a.duration || 0), 0)
+            const availMins = calculateRemainingTime({ slotDuration: slotLimit, breaks: slotBreaks, logs: tasks })
             return (
               <div key={slot} className={`tlr${isBreak ? ' brk' : ''}`}>
                 <div className="tlt">
                   <span className={`tbg${isn ? ' nw' : ''}`}>
                     {isn ? '▶ ' : ''}{slot.split(' - ')[0]}
                   </span>
+                  <div style={{ fontSize: 9.5, fontFamily: 'var(--mo)', color: availMins <= 0 ? 'var(--red)' : 'var(--tx3)', marginTop: 4 }}>
+                    {availMins <= 0 ? 'Full' : `${availMins}m`}
+                  </div>
                 </div>
                 <div className="tles">
+                  <div style={{ display: 'flex', gap: 8, fontSize: 10, fontFamily: 'var(--mo)', color: 'var(--tx3)', marginBottom: 4 }}>
+                    <span>Slot: {slotLimit}m</span>
+                    {breakMins > 0 && <span>Brk: {breakMins}m</span>}
+                    {logMins > 0 && <span>Log: {logMins}m</span>}
+                    <span style={{ color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)', fontWeight: 600 }}>Avail: {availMins}m</span>
+                  </div>
                   {isBreak && (
                     <div className="ec brk-card">
                       <div className="edot" style={{ background: '#f97316', boxShadow: '0 0 5px #f9731666' }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="en">☕ Break</div>
-                        <div className="eno">Scheduled break</div>
+                        <div className="eno">Scheduled break — {breakMins}m</div>
                       </div>
                     </div>
                   )}
@@ -139,9 +153,13 @@ export default function Dashboard({ profile }) {
                   }) : !isBreak && <div className="emp">No log yet</div>}
                 </div>
                 <div className="tla">
-                  <button className="btn bs bxs" onClick={() => {
-                    if (window.__activityModal) window.__activityModal.open(slot)
-                  }}>+ Log</button>
+                  <button className={`btn ${availMins <= 0 ? 'bg2' : 'bs'} bxs`}
+                    disabled={availMins <= 0}
+                    onClick={() => {
+                      if (window.__activityModal) window.__activityModal.open(slot)
+                    }}>
+                    {availMins <= 0 ? 'Slot Full' : '+ Log'}
+                  </button>
                 </div>
               </div>
             )

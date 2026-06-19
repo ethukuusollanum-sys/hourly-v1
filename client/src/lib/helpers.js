@@ -120,3 +120,14 @@ export function sortByCreatedAsc(a, b) {
 export function getToday() {
   return new Date().toISOString().split('T')[0]
 }
+
+export function getSlotDuration(slot) {
+  const [s, e] = slot.split(' - ')
+  return timeToMin(e) - timeToMin(s)
+}
+
+export function calculateRemainingTime({ slotDuration, breaks, logs }) {
+  const breakTotal = (breaks || []).reduce((sum, b) => sum + (b.duration || 0), 0)
+  const logTotal = (logs || []).reduce((sum, l) => sum + (l.duration || 0), 0)
+  return Math.max(0, slotDuration - breakTotal - logTotal)
+}

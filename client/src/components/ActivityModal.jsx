@@ -3,7 +3,7 @@ import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { useAuth } from '../context/AuthContext'
-import { getToday } from '../lib/helpers'
+import { getToday, getSlotDuration, calculateRemainingTime } from '../lib/helpers'
 import { X } from 'lucide-react'
 
 export default function ActivityModal({ profile }) {
@@ -21,34 +21,74 @@ export default function ActivityModal({ profile }) {
   const [saving, setSaving] = useState(false)
 
   const categories = profile?.categories || []
-  const slotUsed = useMemo(() => {
-    if (!slot || !slotDate) return 0
-    return activities
-      .filter(a => a.date === slotDate && a.slot === slot && a.id !== editId)
-      .reduce((sum, a) => sum + (a.duration || 0), 0)
+
+  const slotLimit = useMemo(() => {
+    if (!slot) return 60
+    return getSlotDuration(slot)
+  }, [slot])
+
+  const slotBreaks = useMemo(() => {
+    if (!slot || !slotDate) return []
+    return activities.filter(a =>
+      a.date === slotDate && a.slot === slot && a.id !== editId && a.is_break
+    )
   }, [slot, slotDate, editId, activities])
-  const remaining = Math.max(0, 60 - slotUsed)
+
+  const slotLogs = useMemo(() => {
+    if (!slot || !slotDate) return []
+    return activities.filter(a =>
+      a.date === slotDate && a.slot === slot && a.id !== editId && !a.is_break
+    )
+  }, [slot, slotDate, editId, activities])
+
+  const breakTotal = useMemo(() =>
+    slotBreaks.reduce((s, a) => s + (a.duration || 0), 0),
+    [slotBreaks]
+  )
+
+  const logTotal = useMemo(() =>
+    slotLogs.reduce((s, a) => s + (a.duration || 0), 0),
+    [slotLogs]
+  )
+
+  const remaining = useMemo(() =>
+    calculateRemainingTime({ slotDuration: slotLimit, breaks: slotBreaks, logs: slotLogs }),
+    [slotLimit, slotBreaks, slotLogs]
+  )
+
   const durNum = parseInt(duration) || 0
-  const isOverLimit = slotUsed + durNum > 60
+  const exceedsRemaining = durNum > remaining
+  const isOverLimit = durNum > slotLimit || exceedsRemaining
+  const afterThisLog = Math.max(0, remaining - durNum)
+  const canSave = name.trim() && durNum > 0 && !exceedsRemaining && durNum <= slotLimit
 
   function openModal(slotVal, editData = null) {
     setSlot(slotVal)
+    const limit = getSlotDuration(slotVal)
     if (editData) {
       setEditId(editData.id)
       setName(editData.name)
       setCategory(editData.category || (categories[0]?.id || 'Work'))
-      setDuration(String(editData.duration || 60))
+      setDuration(String(editData.duration || limit))
       setNotes(editData.notes || '')
       setSlotDate(editData.date)
     } else {
       const today = getToday()
-      const used = activities
-        .filter(a => a.date === today && a.slot === slotVal)
-        .reduce((sum, a) => sum + (a.duration || 0), 0)
+      const existBreaks = activities.filter(a =>
+        a.date === today && a.slot === slotVal && a.is_break
+      )
+      const existLogs = activities.filter(a =>
+        a.date === today && a.slot === slotVal && !a.is_break
+      )
+      const used = calculateRemainingTime({
+        slotDuration: limit,
+        breaks: existBreaks,
+        logs: existLogs,
+      })
       setEditId(null)
       setName('')
       setCategory(categories[0]?.id || 'Work')
-      setDuration(String(Math.max(1, 60 - used)))
+      setDuration(String(Math.max(1, used)))
       setNotes('')
       setSlotDate(today)
     }
@@ -63,8 +103,9 @@ export default function ActivityModal({ profile }) {
 
   async function save() {
     if (!name.trim()) { toast('Activity name is required', 'er'); return }
-    const dur = parseInt(duration) || 60
-    if (slotUsed + dur > 60) { toast('Maximum 60 minutes per slot exceeded', 'er'); setSaving(false); return }
+    const dur = parseInt(duration) || 0
+    if (dur <= 0) { toast('Duration must be greater than 0', 'er'); return }
+    if (dur > remaining) { toast('Duration exceeds available time in this slot', 'er'); return }
     setSaving(true)
     const today = getToday()
 
@@ -75,6 +116,7 @@ export default function ActivityModal({ profile }) {
           .update({ name: name.trim(), category, duration: dur, notes: notes.trim(), updated_at: new Date().toISOString() })
           .eq('id', editId)
         if (error) throw error
+        setActivities(prev => prev.map(a => a.id === editId ? { ...a, name: name.trim(), category, duration: dur, notes: notes.trim() } : a))
         toast('Updated ✓', 'ok')
       } else {
         const { data, error } = await supabase
@@ -113,7 +155,6 @@ export default function ActivityModal({ profile }) {
     }
   }
 
-  // Expose to window for non-react parts (like calendar)
   useEffect(() => {
     window.__activityModal = { open: openModal, close: closeModal, del: delActivity }
     return () => { delete window.__activityModal }
@@ -134,6 +175,12 @@ export default function ActivityModal({ profile }) {
           </button>
         </div>
         <div className="mb2">
+          <div style={{ display: 'flex', gap: 12, marginBottom: 14, fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx2)' }}>
+            <span>Slot: {slotLimit}m</span>
+            <span>Break: {breakTotal}m</span>
+            <span>Logged: {logTotal}m</span>
+            <span style={{ color: remaining <= 0 ? 'var(--red)' : remaining <= 15 ? '#e6a817' : 'var(--ac)', fontWeight: 700 }}>Avail: {remaining}m</span>
+          </div>
           <div className="fd">
             <label>What did you work on?</label>
             <input
@@ -142,7 +189,7 @@ export default function ActivityModal({ profile }) {
               maxLength={80}
               value={name}
               onChange={e => setName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') save() }}
+              onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
               autoFocus
             />
           </div>
@@ -169,16 +216,23 @@ export default function ActivityModal({ profile }) {
                 value={duration}
                 onChange={e => setDuration(e.target.value)}
                 maxLength={3}
-                style={isOverLimit ? { borderColor: 'var(--red)' } : undefined}
+                style={exceedsRemaining ? { borderColor: 'var(--red)' } : undefined}
               />
-              <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>Used: {slotUsed}m</span>
-                <span>·</span>
-                <span>Limit: 60m</span>
-                <span>·</span>
-                <span style={{ color: remaining <= 5 ? 'var(--red)' : remaining <= 15 ? '#e6a817' : 'var(--ac)', fontWeight: 600 }}>Remaining: {remaining}m</span>
+              <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Used: {logTotal}m</span>
+                  <span>·</span>
+                  <span>Limit: {slotLimit}m</span>
+                  <span>·</span>
+                  <span style={{ color: remaining <= 5 ? 'var(--red)' : remaining <= 15 ? '#e6a817' : 'var(--ac)', fontWeight: 600 }}>Avail: {remaining}m</span>
+                </div>
+                {durNum > 0 && !exceedsRemaining && (
+                  <span style={{ color: 'var(--tx2)' }}>After this log: {afterThisLog}m remaining</span>
+                )}
+                {exceedsRemaining && durNum > 0 && (
+                  <span style={{ color: 'var(--red)' }}>Entered duration exceeds available time in this slot</span>
+                )}
               </div>
-              {isOverLimit && <div className="errmsg">Maximum 60 minutes per slot exceeded</div>}
             </div>
           </div>
           <div className="fd">
@@ -192,7 +246,7 @@ export default function ActivityModal({ profile }) {
         </div>
         <div className="mf">
           <button className="btn bg2 bsm" onClick={closeModal}>Cancel</button>
-          <button className="btn bp bsm" onClick={save} disabled={saving}>
+          <button className="btn bp bsm" onClick={save} disabled={saving || !canSave}>
             {saving ? 'Saving…' : 'Save Log'}
           </button>
         </div>
