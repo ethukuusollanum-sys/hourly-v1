@@ -13,10 +13,12 @@ import WeeklyReport from './pages/WeeklyReport'
 import Settings from './pages/Settings'
 import Layout from './components/Layout'
 import LoadingScreen from './components/LoadingScreen'
+import SplashScreen from './components/SplashScreen'
 import { ActivitiesProvider } from './context/ActivitiesContext'
 
 export default function App() {
   const { user, session, loading } = useAuth()
+  const [splashDone, setSplashDone] = useState(false)
   const [profile, setProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
@@ -62,6 +64,8 @@ export default function App() {
     }
     return { data, error }
   }
+
+  if (!splashDone) return <SplashScreen onFinish={() => setSplashDone(true)} />
 
   if (loading) return <LoadingScreen />
 
