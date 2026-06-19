@@ -91,14 +91,14 @@ export default function CropModal({ profile, onUpdate }) {
     try {
       const blob = await fetch(preview).then(r => r.blob())
       const ext = file.name.split('.').pop() || 'png'
-      const filePath = `avatars/${user.id}.${ext}`
+      const filePath = `${user.id}.${ext}`
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('Avatar')
         .upload(filePath, blob, { upsert: true, contentType: `image/${ext}` })
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from('Avatar')
         .getPublicUrl(filePath)
 
       await onUpdate({ photo_url: publicUrl })
