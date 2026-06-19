@@ -22,9 +22,13 @@ CREATE TABLE IF NOT EXISTS activities (
   notes TEXT DEFAULT '',
   date DATE NOT NULL,
   slot TEXT NOT NULL,
+  is_break BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ
 );
+
+-- Existing deployments: add is_break column if missing (safe to re-run)
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS is_break BOOLEAN DEFAULT FALSE;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_activities_user_date ON activities(user_id, date);

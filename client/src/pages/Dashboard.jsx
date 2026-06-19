@@ -1,10 +1,11 @@
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getToday, H, M, hexToRgba, esc, sortByCreatedAsc } from '../lib/helpers'
+import { getSlots, getBreakSlots, getToday, H, M, hexToRgba, esc, sortByCreatedAsc } from '../lib/helpers'
 import { supabase } from '../config/supabase'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import useBreakSync from '../hooks/useBreakSync'
 
 export default function Dashboard({ profile }) {
   const { user } = useAuth()
@@ -21,6 +22,9 @@ export default function Dashboard({ profile }) {
   }).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const tm = ta.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const slots = getSlots(settings.workStart || '09:00', settings.workEnd || '18:00')
+  // Reconcile auto-break rows for today against the configured break window.
+  useBreakSync(user, settings, activities)
+  const breakSlots = new Set(getBreakSlots(settings, slots).map(d => d.slot))
   const filled = new Set(ta.map(a => a.slot))
   const nh = new Date().getHours().toString().padStart(2, '0')
 
@@ -85,15 +89,26 @@ export default function Dashboard({ profile }) {
             const sa = ta.filter(a => a.slot === slot)
               .sort(sortByCreatedAsc)
             const isn = slot.split(':')[0] === nh
+            const isBreak = breakSlots.has(slot)
+            const tasks = sa.filter(a => !a.is_break)
             return (
-              <div key={slot} className="tlr">
+              <div key={slot} className={`tlr${isBreak ? ' brk' : ''}`}>
                 <div className="tlt">
                   <span className={`tbg${isn ? ' nw' : ''}`}>
                     {isn ? '▶ ' : ''}{slot.split(' - ')[0]}
                   </span>
                 </div>
                 <div className="tles">
-                  {sa.length ? sa.map(a => {
+                  {isBreak && (
+                    <div className="ec brk-card">
+                      <div className="edot" style={{ background: '#f97316', boxShadow: '0 0 5px #f9731666' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="en">☕ Break</div>
+                        <div className="eno">Scheduled break</div>
+                      </div>
+                    </div>
+                  )}
+                  {tasks.length ? tasks.map(a => {
                     const cat = getCat(a.category)
                     const col = cat.color
                     const tagBg = hexToRgba(col, 0.12)
@@ -121,7 +136,7 @@ export default function Dashboard({ profile }) {
                         </div>
                       </div>
                     )
-                  }) : <div className="emp">No log yet</div>}
+                  }) : !isBreak && <div className="emp">No log yet</div>}
                 </div>
                 <div className="tla">
                   <button className="btn bs bxs" onClick={() => {

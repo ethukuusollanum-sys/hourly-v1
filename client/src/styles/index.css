@@ -93,6 +93,9 @@ input::placeholder,textarea::placeholder{color:var(--tx3)}
 .ib{width:22px;height:22px;border-radius:5px;border:none;background:transparent;color:var(--tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s}
 .ib:hover{background:var(--sf);color:var(--tx)}.ib.del:hover{background:rgba(244,63,94,.15);color:var(--red)}
 .emp{color:var(--tx3);font-size:12px;font-style:italic;padding-top:4px}.tla{flex-shrink:0;align-self:flex-start;padding-top:2px}
+.tlr.brk{background:rgba(249,115,22,.05)}
+.tlr.brk:hover{background:rgba(249,115,22,.08)}
+.brk-card{border:1px dashed rgba(249,115,22,.4);background:rgba(249,115,22,.06)}
 .pb{height:6px;background:var(--bd);border-radius:99px;overflow:hidden;margin-top:5px}
 .pf{height:100%;border-radius:99px;transition:width .6s ease}
 #asc{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}

@@ -14,6 +14,8 @@ export default function Settings({ profile, onUpdate }) {
   const [role, setRole] = useState(settings?.role || '')
   const [workStart, setWorkStart] = useState(settings?.workStart || '09:00')
   const [workEnd, setWorkEnd] = useState(settings?.workEnd || '18:00')
+  const [breakStart, setBreakStart] = useState(settings?.breakStart || '')
+  const [breakEnd, setBreakEnd] = useState(settings?.breakEnd || '')
   const [team, setTeam] = useState(settings?.team || '')
   const [notif, setNotif] = useState(settings?.notif || false)
   const [selectedTheme, setSelectedTheme] = useState(
@@ -28,6 +30,8 @@ export default function Settings({ profile, onUpdate }) {
     setRole(profile.settings?.role || '')
     setWorkStart(profile.settings?.workStart || '09:00')
     setWorkEnd(profile.settings?.workEnd || '18:00')
+    setBreakStart(profile.settings?.breakStart || '')
+    setBreakEnd(profile.settings?.breakEnd || '')
     setTeam(profile.settings?.team || '')
     setNotif(profile.settings?.notif || false)
     const ti = THEMES.findIndex(t => t.ac === (profile.settings?.theme?.ac || '#00d4aa'))
@@ -44,12 +48,22 @@ export default function Settings({ profile, onUpdate }) {
 
   async function saveSettings() {
     if (workStart >= workEnd) { toast('End time must be after start', 'er'); return }
+    const hasBreak = breakStart && breakEnd
+    if (hasBreak && breakEnd <= breakStart) {
+      toast('Break end must be after break start', 'er'); return
+    }
+    if (hasBreak && (breakStart < workStart || breakEnd > workEnd)) {
+      toast('Break must be within working hours', 'er'); return
+    }
     setSaving(true)
     const theme = selectedTheme >= 0 ? THEMES[selectedTheme] : (settings?.theme || THEMES[0])
 
     const newSettings = {
       ...settings,
-      workStart, workEnd, team: team.trim() || 'My Team',
+      workStart, workEnd,
+      breakStart: hasBreak ? breakStart : '',
+      breakEnd: hasBreak ? breakEnd : '',
+      team: team.trim() || 'My Team',
       role: role.trim(), notif, theme,
     }
 
@@ -145,6 +159,19 @@ export default function Settings({ profile, onUpdate }) {
             <div className="fd"><label>End</label>
               <input type="time" value={workEnd} onChange={e => { setWorkEnd(e.target.value); markDirty() }} />
             </div>
+          </div>
+          <div className="tc2" style={{ marginTop: 12 }}>
+            <div className="fd"><label>Break Start <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
+              <input type="time" value={breakStart} onChange={e => { setBreakStart(e.target.value); markDirty() }} />
+            </div>
+            <div className="fd"><label>Break End <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
+              <input type="time" value={breakEnd} onChange={e => { setBreakEnd(e.target.value); markDirty() }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: 8 }}>
+            {breakStart && breakEnd
+              ? 'Break slots are auto-blocked on your timeline each day.'
+              : 'Leave blank for no scheduled break.'}
           </div>
         </div>
       </div>

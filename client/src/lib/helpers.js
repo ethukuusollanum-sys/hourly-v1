@@ -29,6 +29,36 @@ export function getSlots(start, end) {
   return slots
 }
 
+// "13:30" -> 810 (minutes since midnight). Returns 0 for invalid input.
+export function timeToMin(t) {
+  if (!t || !t.includes(':')) return 0
+  const [h, m] = t.split(':').map(n => parseInt(n, 10))
+  if (isNaN(h) || isNaN(m)) return 0
+  return h * 60 + m
+}
+
+// Given a break window (settings.breakStart / settings.breakEnd) and the workday
+// slot list, return the hourly slots that overlap the break with the overlap
+// duration in minutes. Partial overlaps (e.g. 13:30–14:00 break) report the
+// correct overlap minutes. Empty/invalid break window -> [].
+export function getBreakSlots(settings, allSlots) {
+  const bs = settings?.breakStart
+  const be = settings?.breakEnd
+  if (!bs || !be) return []
+  const bStart = timeToMin(bs)
+  const bEnd = timeToMin(be)
+  if (bEnd <= bStart) return []
+  const out = []
+  for (const slot of allSlots) {
+    const [s, e] = slot.split(' - ')
+    const sStart = timeToMin(s)
+    const sEnd = timeToMin(e)
+    const overlap = Math.min(bEnd, sEnd) - Math.max(bStart, sStart)
+    if (overlap > 0) out.push({ slot, duration: overlap })
+  }
+  return out
+}
+
 export function weekStart() {
   const d = new Date()
   d.setDate(d.getDate() - d.getDay())

@@ -9,6 +9,8 @@ export default function OnboardingPage({ profile, onComplete }) {
   const { toast } = useToast()
   const [workStart, setWorkStart] = useState('09:00')
   const [workEnd, setWorkEnd] = useState('18:00')
+  const [breakStart, setBreakStart] = useState('')
+  const [breakEnd, setBreakEnd] = useState('')
   const [team, setTeam] = useState('')
   const [role, setRole] = useState('')
   const [notif, setNotif] = useState(false)
@@ -16,8 +18,21 @@ export default function OnboardingPage({ profile, onComplete }) {
 
   async function finish() {
     if (workStart >= workEnd) { toast('End time must be after start', 'er'); return }
+    // Break is optional, but if set it must be valid and fall within work hours.
+    const hasBreak = breakStart && breakEnd
+    if (hasBreak && breakEnd <= breakStart) {
+      toast('Break end must be after break start', 'er'); return
+    }
+    if (hasBreak && (breakStart < workStart || breakEnd > workEnd)) {
+      toast('Break must be within working hours', 'er'); return
+    }
     setSaving(true)
-    const settings = { workStart, workEnd, team: team.trim() || 'My Team', role: role.trim(), notif }
+    const settings = {
+      workStart, workEnd,
+      breakStart: hasBreak ? breakStart : '',
+      breakEnd: hasBreak ? breakEnd : '',
+      team: team.trim() || 'My Team', role: role.trim(), notif,
+    }
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -51,6 +66,15 @@ export default function OnboardingPage({ profile, onComplete }) {
             <div className="fd"><label>Work Start</label><input type="time" value={workStart} onChange={e => setWorkStart(e.target.value)} /></div>
             <div className="fd"><label>Work End</label><input type="time" value={workEnd} onChange={e => setWorkEnd(e.target.value)} /></div>
           </div>
+          <div className="tc2">
+            <div className="fd"><label>Break Start <span style={{ color: 'var(--tx3)' }}>(optional)</span></label><input type="time" value={breakStart} onChange={e => setBreakStart(e.target.value)} /></div>
+            <div className="fd"><label>Break End <span style={{ color: 'var(--tx3)' }}>(optional)</span></label><input type="time" value={breakEnd} onChange={e => setBreakEnd(e.target.value)} /></div>
+          </div>
+          {breakStart && breakEnd && (
+            <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: -6 }}>
+              Break slots are auto-blocked on your timeline each day.
+            </div>
+          )}
           <div className="fd"><label>Team / Workspace Name</label>
             <input type="text" placeholder="e.g. Engineering, Design…" maxLength={40} value={team} onChange={e => setTeam(e.target.value)} />
           </div>
