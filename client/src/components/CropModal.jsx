@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Cropper from 'react-easy-crop'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
@@ -65,18 +65,28 @@ export default function CropModal({ profile, onUpdate }) {
     input.value = ''
   }
 
+  const previewUrlRef = useRef(null)
   const [cropPixels, setCropData] = useState(null)
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCropData(croppedAreaPixels)
   }, [])
 
+  useEffect(() => {
+    if (!open) {
+      if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null }
+      setPreview(null)
+    }
+  }, [open])
+
   async function handleSave() {
     if (!imgSrc || !cropPixels) return
     setPreview('loading')
     try {
       const blob = await getCroppedImg(imgSrc, cropPixels)
-      setPreview(URL.createObjectURL(blob))
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = URL.createObjectURL(blob)
+      setPreview(previewUrlRef.current)
     } catch {
       toast('Crop failed. Try again.', 'er')
       setPreview(null)
@@ -180,7 +190,7 @@ export default function CropModal({ profile, onUpdate }) {
             </>
           ) : (
             <>
-              <button className="btn bg2 bsm" onClick={() => { setPreview(null); URL.revokeObjectURL(preview) }}>Back</button>
+              <button className="btn bg2 bsm" onClick={() => { setPreview(null); if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null } }}>Back</button>
               <button className="btn bp bsm" onClick={handleUpload} disabled={preview === 'loading'}>
                 {preview === 'loading' ? 'Cropping…' : 'Upload'}
               </button>

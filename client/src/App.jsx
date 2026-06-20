@@ -40,11 +40,11 @@ export default function App() {
       .single()
     if (!error && data) {
       setProfile(data)
-      const savedTheme = localStorage.getItem('ht_theme')
-      if (savedTheme) {
-        applyTheme(JSON.parse(savedTheme))
-      } else if (data.settings?.theme) {
+      if (data.settings?.theme) {
         applyTheme(data.settings.theme)
+      } else {
+        const savedTheme = localStorage.getItem('ht_theme')
+        if (savedTheme) applyTheme(JSON.parse(savedTheme))
       }
     } else {
       setProfile(null)

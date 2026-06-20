@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useActivities } from '../context/ActivitiesContext'
 import { supabase } from '../config/supabase'
-import { getToday, H, M, esc } from '../lib/helpers'
+import { getToday, H, M, esc, timeToMin } from '../lib/helpers'
 
 export default function TeamView({ profile }) {
   const { user } = useAuth()
@@ -63,9 +63,14 @@ export default function TeamView({ profile }) {
       (a.created_at || '') < (b.created_at || '') ? -1 : 1
     ).pop() : null
     const ttm = acts.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
-    const isA = acts.some(a =>
-      parseInt(a.slot?.split(':')[0]) === new Date().getHours()
-    )
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+    const isA = acts.some(a => {
+      if (a.is_break) return false
+      const ws = a.work_start ? timeToMin(a.work_start) : null
+      if (ws === null) return false
+      const dur = parseInt(a.duration) || 0
+      return nowMin >= ws && nowMin < ws + dur
+    })
     const productive = acts.filter(a => {
       const cat = categories.find(c => c.id === a.category)
       return cat?.name !== 'Break'

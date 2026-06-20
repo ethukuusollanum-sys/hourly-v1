@@ -69,6 +69,7 @@ export default function ActivityModal({ profile }) {
     return null
   }, [slot, workStartMin, workEndMin, durNum, breakConfigs])
 
+  const timeFormatValid = workStart ? /^\d{2}:\d{2}$/.test(workStart) : false
   const startBeforeSlot = workStartMin !== null && slot ? timeToMin(parseSlot(slot).start) > workStartMin : false
   const startAfterSlotEnd = workStartMin !== null && slot ? workStartMin >= timeToMin(parseSlot(slot).end) : false
   const endAfterSlot = workEndMin !== null && slot ? workEndMin > timeToMin(parseSlot(slot).end) : false
@@ -76,7 +77,7 @@ export default function ActivityModal({ profile }) {
   const exceedsRemaining = durNum > remaining
   const isOverLimit = durNum > slotLimit || exceedsRemaining
   const afterThisLog = Math.max(0, remaining - durNum)
-  const canSave = name.trim() && durNum > 0 && !overlapError && !exceedsRemaining && !endAfterSlot && workStart.trim()
+  const canSave = name.trim() && durNum > 0 && timeFormatValid && !overlapError && !exceedsRemaining && !endAfterSlot
 
   function openModal(slotVal, editData = null) {
     setSlot(slotVal)
@@ -141,18 +142,18 @@ export default function ActivityModal({ profile }) {
         setActivities(prev => prev.map(a => a.id === editId ? { ...a, name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart, slot: slot } : a))
         toast('Updated ✓', 'ok')
       } else {
-        const { data, error } = await supabase
-          .from('activities')
-          .insert({
-            user_id: user.id,
-            name: name.trim(),
-            category,
-            duration: dur,
-            notes: notes.trim(),
-            date: today,
-            slot,
-            created_at: new Date().toISOString(),
-          })
+          const { data, error } = await supabase
+            .from('activities')
+            .insert({
+              user_id: user.id,
+              name: name.trim(),
+              category,
+              duration: dur,
+              notes: notes.trim(),
+              date: today,
+              slot,
+              created_at: new Date().toISOString(),
+            })
           .select()
           .single()
         if (error) throw error
@@ -238,12 +239,14 @@ export default function ActivityModal({ profile }) {
                   placeholder="HH:MM"
                   value={workStart}
                   onChange={e => setWorkStart(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                   maxLength={5}
-                  style={overlapError ? { borderColor: 'var(--red)' } : undefined}
+                  style={overlapError || (workStart && !timeFormatValid) ? { borderColor: 'var(--red)' } : undefined}
                 />
               </div>
               {overlapError && <div className="errmsg">{overlapError}</div>}
               {startAfterSlotEnd && <div className="errmsg">Start time is outside this slot</div>}
+              {workStart && !timeFormatValid && <div className="errmsg">Use HH:MM format (e.g. 09:30)</div>}
             </div>
           </div>
           <div className="tc2">
@@ -254,6 +257,7 @@ export default function ActivityModal({ profile }) {
                 inputMode="numeric"
                 value={duration}
                 onChange={e => setDuration(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                 maxLength={3}
                 style={exceedsRemaining || endAfterSlot ? { borderColor: 'var(--red)' } : undefined}
               />
@@ -295,6 +299,7 @@ export default function ActivityModal({ profile }) {
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && canSave) save() }}
               placeholder="Context, outcome, blockers…"
             />
           </div>

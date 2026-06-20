@@ -91,11 +91,11 @@ export default function Dashboard({ profile }) {
         </div>
       </div>
 
-      {ta.length === 0 && (
+      {wm === 0 && (
         <div className="infbox m4" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 20, lineHeight: 1 }}>👋</div>
+          <div style={{ fontSize: 20, lineHeight: 1 }}>{ta.length ? '☕' : '👋'}</div>
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--tx)', marginBottom: 2 }}>Start tracking your day</div>
+            <div style={{ fontWeight: 600, color: 'var(--tx)', marginBottom: 2 }}>{ta.length ? 'Only break time logged' : 'Start tracking your day'}</div>
             <div style={{ fontSize: 12, color: 'var(--tx2)' }}>Tap <strong>+ Log</strong> on any time slot below to log what you're working on.</div>
           </div>
         </div>

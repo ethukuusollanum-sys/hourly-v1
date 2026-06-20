@@ -23,6 +23,7 @@ const NAV_ITEMS = [
 const NAV_ITEMS_BOTTOM = [
   { path: '/', label: 'Home', icon: LayoutDashboard, id: 'bn_dash' },
   { path: '/daily', label: 'Logs', icon: CalendarDays, id: 'bn_daily' },
+  { path: '/team', label: 'Team', icon: Users, id: 'bn_team' },
   { path: '/weekly', label: 'Reports', icon: BarChart2, id: 'bn_week' },
   { path: '/settings', label: 'Settings', icon: Settings, id: 'bn_set' },
 ]
