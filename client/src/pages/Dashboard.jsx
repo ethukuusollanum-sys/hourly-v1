@@ -9,7 +9,7 @@ import useBreakSync from '../hooks/useBreakSync'
 
 export default function Dashboard({ profile }) {
   const { user } = useAuth()
-  const { activities, setActivities } = useActivities()
+  const { activities, setActivities, loading } = useActivities()
   const { toast } = useToast()
   const today = getToday()
   const settings = profile?.settings || {}
@@ -58,6 +58,14 @@ export default function Dashboard({ profile }) {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="sg">
+        {[1, 2, 3, 4].map(i => <div key={i} className="skel skel-card" />)}
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="sg">
@@ -82,6 +90,16 @@ export default function Dashboard({ profile }) {
           <div className="su2">work vs break ratio</div>
         </div>
       </div>
+
+      {ta.length === 0 && (
+        <div className="infbox m4" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontSize: 20, lineHeight: 1 }}>👋</div>
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--tx)', marginBottom: 2 }}>Start tracking your day</div>
+            <div style={{ fontSize: 12, color: 'var(--tx2)' }}>Tap <strong>+ Log</strong> on any time slot below to log what you're working on.</div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="ch">
@@ -110,11 +128,19 @@ export default function Dashboard({ profile }) {
                   </div>
                 </div>
                 <div className="tles">
-                  <div style={{ display: 'flex', gap: 8, fontSize: 10, fontFamily: 'var(--mo)', color: 'var(--tx3)', marginBottom: 4 }}>
-                    <span>Slot: {slotLimit}m</span>
-                    {breakMins > 0 && <span>Brk: {breakMins}m</span>}
-                    {logMins > 0 && <span>Log: {logMins}m</span>}
-                    <span style={{ color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)', fontWeight: 600 }}>Avail: {availMins}m</span>
+                  <div style={{ display: 'flex', gap: 10, fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx2)', marginBottom: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span title="Slot duration">📅 {slotLimit}m</span>
+                    {breakMins > 0 && <span title="Break time in this slot">☕ {breakMins}m</span>}
+                    {logMins > 0 && <span title="Logged time">📝 {logMins}m</span>}
+                    <span style={{
+                      color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)',
+                      fontWeight: 600,
+                      background: availMins <= 5 ? 'rgba(244,63,94,.12)' : 'transparent',
+                      padding: availMins <= 5 ? '1px 6px' : 0,
+                      borderRadius: 4,
+                    }} title="Available time">
+                      ◉ {availMins}m
+                    </span>
                   </div>
                   {/* Timeline bar */}
                   {(() => {
@@ -122,7 +148,7 @@ export default function Dashboard({ profile }) {
                     const total = timeToMin(parseSlot(slot).end) - timeToMin(parseSlot(slot).start)
                     if (total <= 0) return null
                     return (
-                      <div style={{ display: 'flex', height: 14, borderRadius: 4, overflow: 'hidden', marginBottom: 6, gap: 1 }}>
+                      <div style={{ display: 'flex', height: 18, borderRadius: 6, overflow: 'hidden', marginBottom: 6, gap: 1 }}>
                         {segs.occupied.length === 0 && !segs.available.length ? (
                           <div style={{ flex: 1, background: 'var(--bd)', borderRadius: 4 }} />
                         ) : (
@@ -155,6 +181,9 @@ export default function Dashboard({ profile }) {
                     const col = cat.color
                     const tagBg = hexToRgba(col, 0.12)
                     const tagBd = hexToRgba(col, 0.25)
+                    const timeLabel = a.work_start
+                      ? `${a.work_start}→${minToString(timeToMin(a.work_start) + (a.duration || 60))}`
+                      : null
                     return (
                       <div key={a.id} className="ec">
                         <div className="edot" style={{ background: col, boxShadow: `0 0 5px ${col}66` }} />
@@ -165,7 +194,11 @@ export default function Dashboard({ profile }) {
                             <span className="tag" style={{ background: tagBg, color: col, border: `1px solid ${tagBd}` }}>
                               {cat.icon} {a.category}
                             </span>
-                            <span className="edur">⏱ {a.duration || 60}m</span>
+                            {timeLabel ? (
+                              <span className="edur" title={`${a.duration || 60}min`}>{timeLabel}</span>
+                            ) : (
+                              <span className="edur">⏱ {a.duration || 60}m</span>
+                            )}
                           </div>
                         </div>
                         <div className="ea">
@@ -178,7 +211,9 @@ export default function Dashboard({ profile }) {
                         </div>
                       </div>
                     )
-                  }) : !isBreak && <div className="emp">No log yet</div>}
+                  }) : !isBreak && <div className="emp" style={{ color: 'var(--tx3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 14, opacity: 0.5 }}>○</span> {availMins > 0 ? `${availMins}m available — tap +Log to start` : 'No available time'}
+                  </div>}
                 </div>
                 <div className="tla">
                   <button className={`btn ${availMins <= 0 ? 'bg2' : 'bs'} bxs`}
