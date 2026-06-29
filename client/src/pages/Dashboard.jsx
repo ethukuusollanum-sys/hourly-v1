@@ -2,7 +2,7 @@ import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { getSlots, getBreakSlots, getSlotDuration, getSlotSegments, getToday, H, M, hexToRgba, esc, sortByCreatedAsc, calculateRemainingTime, minToString, parseSlot, timeToMin } from '../lib/helpers'
 import { supabase } from '../config/supabase'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Coffee, Clock, Calendar, CircleAlert, ListChecks, Timer } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import useBreakSync from '../hooks/useBreakSync'
@@ -92,11 +92,11 @@ export default function Dashboard({ profile }) {
       </div>
 
       {wm === 0 && (
-        <div className="infbox m4" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: 20, lineHeight: 1 }}>{ta.length ? '☕' : '👋'}</div>
+        <div className="infbox m4">
+          <div className="infbox-icon">{ta.length ? <Coffee size={18} /> : <Clock size={18} />}</div>
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--tx)', marginBottom: 2 }}>{ta.length ? 'Only break time logged' : 'Start tracking your day'}</div>
-            <div style={{ fontSize: 12, color: 'var(--tx2)' }}>Tap <strong>+ Log</strong> on any time slot below to log what you're working on.</div>
+            <div className="infbox-title">{ta.length ? 'Only break time logged' : 'Start tracking your day'}</div>
+            <div className="infbox-text">Tap <strong>+ Log</strong> on any time slot below to log what you're working on.</div>
           </div>
         </div>
       )}
@@ -123,23 +123,20 @@ export default function Dashboard({ profile }) {
                   <span className={`tbg${isn ? ' nw' : ''}`}>
                     {isn ? '▶ ' : ''}{slot.split(' - ')[0]}
                   </span>
-                  <div style={{ fontSize: 9.5, fontFamily: 'var(--mo)', color: availMins <= 0 ? 'var(--red)' : 'var(--tx3)', marginTop: 4 }}>
+                  <div style={{ fontSize: 10, fontFamily: 'var(--mo)', color: availMins <= 0 ? 'var(--red)' : 'var(--tx3)', marginTop: 4 }}>
                     {availMins <= 0 ? 'Full' : `${availMins}m`}
                   </div>
                 </div>
                 <div className="tles">
-                  <div style={{ display: 'flex', gap: 10, fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx2)', marginBottom: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span title="Slot duration">📅 {slotLimit}m</span>
-                    {breakMins > 0 && <span title="Break time in this slot">☕ {breakMins}m</span>}
-                    {logMins > 0 && <span title="Logged time">📝 {logMins}m</span>}
-                    <span style={{
-                      color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)',
-                      fontWeight: 600,
-                      background: availMins <= 5 ? 'rgba(244,63,94,.12)' : 'transparent',
-                      padding: availMins <= 5 ? '1px 6px' : 0,
-                      borderRadius: 4,
-                    }} title="Available time">
-                      ◉ {availMins}m
+                  <div className="slot-meta">
+                    <span className="slot-meta-item" title="Slot duration"><Clock size={10} /> {slotLimit}m</span>
+                    {breakMins > 0 && <span className="slot-meta-item" title="Break time in this slot"><Coffee size={10} /> {breakMins}m</span>}
+                    {logMins > 0 && <span className="slot-meta-item" title="Logged time"><ListChecks size={10} /> {logMins}m</span>}
+                    <span className={`slot-avail${availMins <= 5 ? ' slot-avail-critical' : ''}`}
+                      style={{
+                        color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)',
+                      }} title="Available time">
+                      <Timer size={10} /> {availMins}m
                     </span>
                   </div>
                   {/* Timeline bar */}
@@ -171,7 +168,7 @@ export default function Dashboard({ profile }) {
                     <div className="ec brk-card">
                       <div className="edot" style={{ background: '#f97316', boxShadow: '0 0 5px #f9731666' }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="en">☕ Break</div>
+                        <div className="en"><Coffee size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} /> Break</div>
                         <div className="eno">Scheduled break — {breakMins}m</div>
                       </div>
                     </div>
@@ -197,22 +194,22 @@ export default function Dashboard({ profile }) {
                             {timeLabel ? (
                               <span className="edur" title={`${a.duration || 60}min`}>{timeLabel}</span>
                             ) : (
-                              <span className="edur">⏱ {a.duration || 60}m</span>
+                              <span className="edur"><Clock size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} /> {a.duration || 60}m</span>
                             )}
                           </div>
                         </div>
                         <div className="ea">
-                          <button className="ib" onClick={() => openEdit(a)} title="Edit">
+                          <button className="ib" onClick={() => openEdit(a)} aria-label={`Edit ${a.name}`}>
                             <Pencil size={12} />
                           </button>
-                          <button className="ib del" onClick={() => delActivity(a.id, a.name)} title="Delete">
+                          <button className="ib del" onClick={() => delActivity(a.id, a.name)} aria-label={`Delete ${a.name}`}>
                             <Trash2 size={12} />
                           </button>
                         </div>
                       </div>
                     )
-                  }) : !isBreak && <div className="emp" style={{ color: 'var(--tx3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 14, opacity: 0.5 }}>○</span> {availMins > 0 ? `${availMins}m available — tap +Log to start` : 'No available time'}
+                  }) : !isBreak && <div className="emp">
+                    <CircleAlert size={12} /> {availMins > 0 ? `${availMins}m available — tap +Log to start` : 'No available time'}
                   </div>}
                 </div>
                 <div className="tla">
