@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { esc } from '../lib/helpers'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, Settings, Download, LogOut, ChevronsUpDown, Menu, Timer, X, SquareArrowOutUpRight, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, Settings, Download, LogOut, ChevronsUpDown, Timer, X, SquareArrowOutUpRight, RefreshCw } from 'lucide-react'
 import ActivityModal from './ActivityModal'
 import ExportModal from './ExportModal'
 import CategoryModal from './CategoryModal'
@@ -105,9 +105,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
 
   return (
     <>
-      <div id="mobov" className={sidebarOpen ? 'on' : ''} onClick={() => setSidebarOpen(false)} />
-
-      <aside id="sb" className={sidebarOpen ? 'open' : ''}>
+      <aside id="sb">
         <div className="logo">
           <div className="lic"><Timer size={18} color="#000" /></div>
           <div>
@@ -160,10 +158,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
 
       <main>
         <div className="bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button className="ham" onClick={() => setSidebarOpen(true)}>
-              <Menu size={20} />
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{ minWidth: 0, overflow: 'hidden' }}>
               <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pageTitle}</div>
               <div style={{ fontSize: 11, color: 'var(--tx2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{today}</div>

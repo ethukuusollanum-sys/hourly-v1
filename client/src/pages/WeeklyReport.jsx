@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getToday, DAYS, H, M, hexToRgba, esc, weekStart as wsFn } from '../lib/helpers'
+import { getSlots, getBreakSlots, getToday, DAYS, H, M, hexToRgba, esc, timeToMin, weekStart as wsFn } from '../lib/helpers'
 import { generateAISummary } from '../api/ai'
 import { Download, ChevronLeft, ChevronRight, Share2, Calendar, Clock, Coffee, Target, Activity, TrendingUp, ListChecks, Brain, ArrowRight } from 'lucide-react'
 
@@ -43,29 +43,51 @@ export default function WeeklyReport({ profile }) {
 
   const wa = useMemo(() => activities.filter(a => weekRange.includes(a.date)), [activities, weekRange])
 
+  const settings = profile?.settings || {}
+  const breakConfigs = settings?.breakSlots || []
+  const workStart = settings?.workStart || '09:00'
+  const workEnd = settings?.workEnd || '18:00'
+
+  const scheduledBreakInfo = useMemo(() => {
+    const allDaySlots = getSlots(workStart, workEnd)
+    const dailyBreakData = getBreakSlots({ breakSlots: breakConfigs }, allDaySlots)
+    const minsPerDay = dailyBreakData.reduce((s, b) => s + (b.duration || 0), 0)
+    const maxBreak = breakConfigs.length
+      ? Math.max(...breakConfigs.map(b => timeToMin(b.end) - timeToMin(b.start)))
+      : 0
+    return { minsPerDay, sessionsPerDay: breakConfigs.length, maxBreak }
+  }, [breakConfigs, workStart, workEnd])
+
   const stats = useMemo(() => {
-    const total = wa.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
-    const work = wa.filter(a => {
+    const loggedWork = wa.filter(a => {
       const cat = categories.find(c => c.id === a.category)
       return cat?.name !== 'Break'
     }).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
-    const breaks = wa.filter(a => {
+    const loggedBreaks = wa.filter(a => {
       const cat = categories.find(c => c.id === a.category)
       return cat?.name === 'Break'
     }).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
+    const loggedBreakSessions = wa.filter(a => {
+      const cat = categories.find(c => c.id === a.category)
+      return cat?.name === 'Break'
+    }).length
+
+    const schedMins = scheduledBreakInfo.minsPerDay * weekRange.length
+    const schedSessions = scheduledBreakInfo.sessionsPerDay * weekRange.length
+
+    const totalBreaks = loggedBreaks + schedMins
+    const totalTracked = loggedWork + totalBreaks
+    const focusScore = totalTracked > 0 ? Math.round((loggedWork / totalTracked) * 100) : 0
+
     const workSessions = wa.filter(a => {
       const cat = categories.find(c => c.id === a.category)
       return cat?.name !== 'Break'
     }).length
-    const breakSessions = wa.filter(a => {
-      const cat = categories.find(c => c.id === a.category)
-      return cat?.name === 'Break'
-    }).length
+    const breakSessions = loggedBreakSessions + schedSessions
     const activeDays = new Set(wa.map(a => a.date)).size
-    const focusScore = total > 0 ? Math.round((work / total) * 100) : 0
 
     const dayMins = weekRange.map(d =>
-      wa.filter(a => a.date === d).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
+      (wa.filter(a => a.date === d).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)) + scheduledBreakInfo.minsPerDay
     )
     const maxDay = Math.max(...dayMins, 0)
     const minDay = activeDays > 0 ? Math.min(...dayMins.filter(x => x > 0), 0) : 0
@@ -86,18 +108,20 @@ export default function WeeklyReport({ profile }) {
       .map(a => parseInt(a.duration) || 60)
 
     const longestWork = sessionDurs.length ? Math.max(...sessionDurs) : 0
-    const longestBreak = breakDurs.length ? Math.max(...breakDurs) : 0
+    const longestBreak = Math.max(scheduledBreakInfo.maxBreak, ...breakDurs, 0)
 
     const taskCount = {}
     wa.forEach(a => { taskCount[a.name] = (taskCount[a.name] || 0) + 1 })
     const mostFreq = Object.entries(taskCount).sort((a, b) => b[1] - a[1])[0]
 
     return {
-      total, work, breaks, workSessions, breakSessions, activeDays, focusScore,
+      total: totalTracked, work: loggedWork, breaks: totalBreaks,
+      workSessions, breakSessions, activeDays, focusScore,
       maxDay, minDay, maxDayIdx, minDayIdx, longestWork, longestBreak,
       mostFreq: mostFreq || null, dayMins,
+      schedMins, loggedBreaks,
     }
-  }, [wa, categories, weekRange])
+  }, [wa, categories, weekRange, scheduledBreakInfo])
 
   function goWeek(offset) {
     setWeekOffset(offset)
@@ -111,8 +135,12 @@ export default function WeeklyReport({ profile }) {
     wa.forEach(a => {
       m[a.category] = (m[a.category] || 0) + (parseInt(a.duration) || 60)
     })
+    if (scheduledBreakInfo.minsPerDay > 0) {
+      const schedTotal = scheduledBreakInfo.minsPerDay * weekRange.length
+      m['Break'] = (m['Break'] || 0) + schedTotal
+    }
     return m
-  }, [wa])
+  }, [wa, scheduledBreakInfo, weekRange])
 
   const slots = getSlots(profile?.settings?.workStart || '09:00', profile?.settings?.workEnd || '18:00')
 
@@ -316,6 +344,14 @@ export default function WeeklyReport({ profile }) {
           <div className="cat-row">
             <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Break Sessions</div>
             <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: 'var(--tx)', fontWeight: 600 }}>{stats.breakSessions}</div>
+          </div>
+          <div className="cat-row">
+            <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Scheduled Break Time</div>
+            <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: '#f97316', fontWeight: 600 }}>{H(stats.schedMins)}h {M(stats.schedMins)}m</div>
+          </div>
+          <div className="cat-row">
+            <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Logged Break Time</div>
+            <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: 'var(--tx)' }}>{H(stats.loggedBreaks)}h {M(stats.loggedBreaks)}m</div>
           </div>
           <div className="cat-row">
             <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Longest Work Session</div>
