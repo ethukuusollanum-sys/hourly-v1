@@ -158,13 +158,35 @@ export default function Layout({ children, profile, onProfileUpdate }) {
 
       <main>
         <div className="bar">
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Mobile: app logo + name + date */}
+          <div className="mo" style={{ alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: 'var(--ac)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Timer size={16} color="#000" />
+            </div>
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+              <div style={{
+                fontSize: 13.5, fontWeight: 700, lineHeight: 1.2,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>Hourly</div>
+              <div style={{
+                fontSize: 10.5, color: 'var(--tx2)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{today}</div>
+            </div>
+          </div>
+          {/* Desktop: page title + date */}
+          <div className="do" style={{ alignItems: 'center', flex: 1, minWidth: 0 }}>
             <div style={{ minWidth: 0, overflow: 'hidden' }}>
               <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pageTitle}</div>
               <div style={{ fontSize: 11, color: 'var(--tx2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{today}</div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div
               className="av"
               style={{ width: 28, height: 28, fontSize: 12, cursor: 'pointer' }}

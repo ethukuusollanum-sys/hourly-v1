@@ -210,12 +210,16 @@ input::placeholder,textarea::placeholder{color:var(--tx3)}
 @keyframes pgSlideBack{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
 .puls{animation:pulse 1.4s ease infinite}
 .spin{animation:spin 1s linear infinite}
+.mo{display:none}
+.do{display:flex}
 @media(max-width:768px){
   :root{--sw:0px;--bn:80px}
   aside{transform:translateX(-244px);width:244px}
   aside.open{transform:translateX(0)}
   main{margin-left:0;padding-bottom:var(--bn)}
   .al{display:none}
+  .do{display:none}
+  .mo{display:flex}
   .pg{padding:14px}
   .bar{padding:0 14px}
   .sg{grid-template-columns:1fr 1fr}
