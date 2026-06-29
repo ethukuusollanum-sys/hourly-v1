@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
 import { THEMES, applyTheme, esc, hexToRgba } from '../lib/helpers'
-import { Camera, LogOut, Pencil, Trash2 } from 'lucide-react'
+import { Camera, LogOut, Pencil, Trash2, Download, HelpCircle, Mail, Info, ExternalLink, SwitchCamera } from 'lucide-react'
 import TimePicker from '../components/TimePicker'
 
 export default function Settings({ profile, onUpdate }) {
@@ -89,9 +89,9 @@ export default function Settings({ profile, onUpdate }) {
 
   return (
     <div style={{ maxWidth: 500, margin: '0 auto' }}>
-      {/* Profile */}
+      {/* ===== Profile ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Profile</div>
       <div className="card m4">
-        <div className="ch"><div className="ct">Profile</div></div>
         <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ position: 'relative', display: 'inline-flex' }}>
@@ -144,7 +144,29 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* Hours */}
+      {/* ===== Appearance ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Appearance</div>
+
+      <div className="card m4">
+        <div className="ch"><div className="ct">Theme Color</div></div>
+        <div style={{ padding: 18 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {THEMES.map((t, i) => (
+              <div
+                key={t.name}
+                className={`theme-opt${i === selectedTheme ? ' on' : ''}`}
+                style={{ background: t.ac }}
+                title={t.name}
+                onClick={() => previewTheme(i)}
+              />
+            ))}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--tx2)', marginTop: 8 }}>
+            {THEMES[Math.max(0, selectedTheme)]?.name}
+          </div>
+        </div>
+      </div>
+
       <div className="card m4">
         <div className="ch"><div className="ct">Working Hours</div></div>
         <div style={{ padding: 18 }}>
@@ -196,48 +218,52 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* Theme */}
+      {/* ===== Account ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Account</div>
+
       <div className="card m4">
-        <div className="ch"><div className="ct">Theme Color</div></div>
-        <div style={{ padding: 18 }}>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {THEMES.map((t, i) => (
-              <div
-                key={t.name}
-                className={`theme-opt${i === selectedTheme ? ' on' : ''}`}
-                style={{ background: t.ac }}
-                title={t.name}
-                onClick={() => previewTheme(i)}
-              />
-            ))}
+        <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
+          <div className="cat-row" style={{ cursor: 'pointer' }} onClick={() => { if (window.__openAccSwitcher) window.__openAccSwitcher() }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+              <SwitchCamera size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Switch User</div>
+            <ExternalLink size={12} color="var(--tx3)" />
           </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--tx2)', marginTop: 8 }}>
-            {THEMES[Math.max(0, selectedTheme)]?.name}
+          <div className="cat-row" style={{ cursor: 'pointer' }} onClick={doLogout}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)' }}>
+              <LogOut size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--red)' }}>Sign Out</div>
           </div>
         </div>
       </div>
 
-      {/* Notifications */}
+      {/* ===== Application ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Application</div>
+
       <div className="card m4">
-        <div className="ch"><div className="ct">Notifications</div></div>
-        <div style={{ padding: 18 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '11px 13px', background: 'var(--sf2)', border: '1px solid var(--bd2)', borderRadius: 'var(--rs)',
-          }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Hourly Reminders</div>
-              <div style={{ fontSize: '11.5px', color: 'var(--tx2)' }}>Browser notification each hour</div>
+        <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
+          <div className="cat-row" style={{ cursor: 'pointer' }} onClick={() => { if (window.__openExport) window.__openExport() }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+              <Download size={14} />
             </div>
-            <button className={`tog${notif ? ' on' : ''}`} onClick={() => {
-              const newVal = !notif
-              setNotif(newVal)
-              markDirty()
-              if (!newVal) return
-              if (typeof Notification === 'undefined') return
-              if (Notification.permission === 'default') Notification.requestPermission()
-              else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
-            }} />
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Export Data</div>
+            <ExternalLink size={12} color="var(--tx3)" />
+          </div>
+          <div style={{ padding: 0, border: 'none' }}>
+            <div className="ch" style={{ borderBottom: 'none', padding: '12px 0' }}>
+              <div className="ct" style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Notifications</div>
+              <button className={`tog${notif ? ' on' : ''}`} onClick={() => {
+                const newVal = !notif
+                setNotif(newVal)
+                markDirty()
+                if (!newVal) return
+                if (typeof Notification === 'undefined') return
+                if (Notification.permission === 'default') Notification.requestPermission()
+                else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
+              }} />
+            </div>
           </div>
         </div>
       </div>
@@ -294,13 +320,39 @@ export default function Settings({ profile, onUpdate }) {
         <span>The <strong style={{ color: 'var(--tx)' }}>Break</strong> category is excluded from focus score calculations.</span>
       </div>
 
-      {/* Save + Logout */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      {/* ===== Support ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Support</div>
+
+      <div className="card m4">
+        <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
+          <a href="mailto:support@hourly.app" style={{ textDecoration: 'none' }} className="cat-row">
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+              <Mail size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Contact Us</div>
+            <ExternalLink size={12} color="var(--tx3)" />
+          </a>
+          <a href="https://hourly.app/help" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} className="cat-row">
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+              <HelpCircle size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Help & Support</div>
+            <ExternalLink size={12} color="var(--tx3)" />
+          </a>
+          <a href="https://hourly.app/privacy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} className="cat-row">
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+              <Info size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Privacy Policy</div>
+            <ExternalLink size={12} color="var(--tx3)" />
+          </a>
+        </div>
+      </div>
+
+      {/* Save */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
         <button className="btn bp" style={{ flex: 1 }} onClick={saveSettings} disabled={!dirty || saving}>
           {saving ? 'Saving…' : dirty ? 'Save Changes' : '✓ Saved'}
-        </button>
-        <button className="btn bdr bsm" onClick={doLogout}>
-          <LogOut size={13} /> Sign Out
         </button>
       </div>
     </div>

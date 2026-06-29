@@ -24,8 +24,6 @@ const NAV_ITEMS_BOTTOM = [
   { path: '/', label: 'Home', icon: LayoutDashboard, id: 'bn_dash' },
   { path: '/daily', label: 'Logs', icon: CalendarDays, id: 'bn_daily' },
   { path: '/team', label: 'Team', icon: Users, id: 'bn_team' },
-  { path: '/weekly', label: 'Reports', icon: BarChart2, id: 'bn_week' },
-  { path: '/settings', label: 'Settings', icon: Settings, id: 'bn_set' },
 ]
 
 export default function Layout({ children, profile, onProfileUpdate }) {
@@ -51,6 +49,11 @@ export default function Layout({ children, profile, onProfileUpdate }) {
   }, [location.pathname])
 
   useHourlyReminder(profile?.settings?.notif)
+
+  useEffect(() => {
+    window.__openAccSwitcher = () => setShowAccSwitcher(true)
+    return () => { delete window.__openAccSwitcher }
+  }, [])
 
   const [installEvent, setInstallEvent] = useState(null)
   const [installDismissed, setInstallDismissed] = useState(false)
@@ -92,7 +95,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
     case '/daily': pageTitle = 'Daily Logs'; break
     case '/team': pageTitle = 'Team View'; break
     case '/weekly': pageTitle = 'Weekly Report'; break
-    case '/settings': pageTitle = 'Settings'; break
+    case '/settings': pageTitle = 'Profile & Settings'; break
   }
 
   const today = new Date().toLocaleDateString('en-US', {
@@ -236,7 +239,10 @@ export default function Layout({ children, profile, onProfileUpdate }) {
                 </button>
               )
             })}
-            <button className="bni" onClick={() => setShowAccSwitcher(true)}>
+            <button
+              className={`bni${location.pathname === '/settings' ? ' on' : ''}`}
+              onClick={() => navigate('/settings')}
+            >
               <span className="bni-icon">
                 <div style={{ width: 20, height: 20, borderRadius: '50%', padding: 1.5, background: '#334155', transition: 'all .3s', flexShrink: 0 }}>
                   <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#090d16', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 900, color: '#fff' }}>
@@ -244,7 +250,7 @@ export default function Layout({ children, profile, onProfileUpdate }) {
                   </div>
                 </div>
               </span>
-              <span className="bni-lbl">Account</span>
+              <span className="bni-lbl">Profile</span>
             </button>
           </div>
         </div>

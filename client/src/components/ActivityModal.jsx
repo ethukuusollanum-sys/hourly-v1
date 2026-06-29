@@ -136,7 +136,7 @@ export default function ActivityModal({ profile }) {
       if (editId) {
         const { error } = await supabase
           .from('activities')
-          .update({ name: name.trim(), category, duration: dur, notes: notes.trim(), updated_at: new Date().toISOString() })
+          .update({ name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart, updated_at: new Date().toISOString() })
           .eq('id', editId)
         if (error) throw error
         setActivities(prev => prev.map(a => a.id === editId ? { ...a, name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart, slot: slot } : a))
@@ -152,6 +152,7 @@ export default function ActivityModal({ profile }) {
               notes: notes.trim(),
               date: today,
               slot,
+              work_start: workStart,
               created_at: new Date().toISOString(),
             })
           .select()

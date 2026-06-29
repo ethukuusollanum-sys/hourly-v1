@@ -164,25 +164,58 @@ export function getSlotSegments(slot, breakConfigs, logs) {
 
   // Build occupied timeline (breaks + existing work)
   const occupied = mergedBreaks.map(b => ({ ...b, type: 'break' }))
+
+  const logsWithStart = []
+  const logsWithoutStart = []
+
   for (const log of logs || []) {
     if (log.is_break) continue
-    const wStart = log.work_start ? timeToMin(log.work_start) : null
     const dur = parseInt(log.duration) || 0
-    if (wStart !== null && dur > 0) {
-      occupied.push({ start: wStart, end: wStart + dur, type: 'work', activity: log })
+    if (dur <= 0) continue
+    if (log.work_start) {
+      logsWithStart.push(log)
+    } else {
+      logsWithoutStart.push(log)
     }
+  }
+
+  for (const log of logsWithStart) {
+    const wStart = timeToMin(log.work_start)
+    const dur = parseInt(log.duration) || 0
+    occupied.push({ start: wStart, end: wStart + dur, type: 'work', activity: log })
   }
   occupied.sort((a, b) => a.start - b.start)
 
-  // Merge all occupied intervals
+  // Merge overlapping intervals (same-type only)
   const merged = []
   for (const o of occupied) {
-    if (merged.length && o.start <= merged[merged.length - 1].end) {
+    if (merged.length && o.type === merged[merged.length - 1].type && o.start <= merged[merged.length - 1].end) {
       if (o.end > merged[merged.length - 1].end) {
         merged[merged.length - 1].end = o.end
       }
     } else {
       merged.push({ ...o })
+    }
+  }
+
+  // Place logs without work_start into first available gaps (by created_at order)
+  if (logsWithoutStart.length) {
+    logsWithoutStart.sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
+    for (const log of logsWithoutStart) {
+      const dur = parseInt(log.duration) || 0
+      let cursor = sMin
+      let placed = false
+      for (let i = 0; i < merged.length; i++) {
+        if (merged[i].start > cursor && cursor + dur <= merged[i].start) {
+          merged.splice(i, 0, { start: cursor, end: cursor + dur, type: 'work', activity: log })
+          placed = true
+          break
+        }
+        cursor = Math.max(cursor, merged[i].end)
+      }
+      if (!placed && cursor + dur <= eMin) {
+        merged.push({ start: cursor, end: cursor + dur, type: 'work', activity: log })
+      }
     }
   }
 

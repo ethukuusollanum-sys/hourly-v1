@@ -27,8 +27,9 @@ CREATE TABLE IF NOT EXISTS activities (
   updated_at TIMESTAMPTZ
 );
 
--- Existing deployments: add is_break column if missing (safe to re-run)
+-- Existing deployments: add columns if missing (safe to re-run)
 ALTER TABLE activities ADD COLUMN IF NOT EXISTS is_break BOOLEAN DEFAULT FALSE;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS work_start TEXT;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_activities_user_date ON activities(user_id, date);

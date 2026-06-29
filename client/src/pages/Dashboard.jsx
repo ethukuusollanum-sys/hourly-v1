@@ -144,23 +144,47 @@ export default function Dashboard({ profile }) {
                     const segs = getSlotSegments(slot, settings?.breakSlots || [], sa)
                     const total = timeToMin(parseSlot(slot).end) - timeToMin(parseSlot(slot).start)
                     if (total <= 0) return null
+
+                    // Merge occupied + available into chronological order
+                    const allSegs = []
+                    let oi = 0, ai = 0
+                    while (oi < segs.occupied.length || ai < segs.available.length) {
+                      const o = oi < segs.occupied.length ? segs.occupied[oi] : null
+                      const a = ai < segs.available.length ? segs.available[ai] : null
+                      if (a && (!o || a.start < o.start)) {
+                        allSegs.push({ start: a.start, end: a.end, type: 'available' })
+                        ai++
+                      } else if (o) {
+                        allSegs.push(o)
+                        oi++
+                      } else {
+                        allSegs.push({ start: a.start, end: a.end, type: 'available' })
+                        ai++
+                      }
+                    }
+
+                    if (!allSegs.length) {
+                      return <div style={{ flex: 1, height: 18, borderRadius: 6, background: 'var(--bd)' }} />
+                    }
+
                     return (
                       <div style={{ display: 'flex', height: 18, borderRadius: 6, overflow: 'hidden', marginBottom: 6, gap: 1 }}>
-                        {segs.occupied.length === 0 && !segs.available.length ? (
-                          <div style={{ flex: 1, background: 'var(--bd)', borderRadius: 4 }} />
-                        ) : (
-                          <>
-                            {segs.occupied.map((seg, i) => {
-                              const pct = ((seg.end - seg.start) / total) * 100
-                              const color = seg.type === 'break' ? '#f97316' : 'var(--ac)'
-                              return <div key={`occ-${i}`} style={{ width: `${pct}%`, background: color, borderRadius: i === 0 && !segs.available.length ? 4 : 0, opacity: seg.type === 'break' ? 0.7 : 0.85 }} title={`${seg.type === 'break' ? 'Break' : 'Work'}: ${minToString(seg.start)} - ${minToString(seg.end)}`} />
-                            })}
-                            {segs.available.map((gap, i) => {
-                              const pct = ((gap.end - gap.start) / total) * 100
-                              return <div key={`avail-${i}`} style={{ width: `${pct}%`, background: 'var(--bd)', opacity: 0.4 }} title={`Available: ${minToString(gap.start)} - ${minToString(gap.end)}`} />
-                            })}
-                          </>
-                        )}
+                        {allSegs.map((seg, i) => {
+                          const pct = ((seg.end - seg.start) / total) * 100
+                          if (seg.type === 'available') {
+                            return <div key={`seg-${i}`} style={{ width: `${pct}%`, background: 'var(--bd)', opacity: 0.4 }} title={`Available: ${minToString(seg.start)} - ${minToString(seg.end)} (${seg.end - seg.start}m)`} />
+                          }
+                          const isBreak = seg.type === 'break'
+                          const color = isBreak ? '#f97316' : 'var(--ac)'
+                          const act = seg.activity
+                          const label = isBreak ? 'Break' : (act ? act.name : 'Work')
+                          const cat = isBreak ? 'Scheduled Break' : (act ? act.category : 'Work')
+                          const startStr = minToString(seg.start)
+                          const endStr = minToString(seg.end)
+                          const durStr = `${seg.end - seg.start}m`
+                          const tip = `${label} (${cat})\n${startStr} → ${endStr}\n${durStr}`
+                          return <div key={`seg-${i}`} style={{ width: `${pct}%`, background: color, borderRadius: 0, opacity: isBreak ? 0.7 : 0.85 }} title={tip} />
+                        })}
                       </div>
                     )
                   })()}
