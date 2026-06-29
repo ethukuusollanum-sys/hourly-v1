@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { getSlots, getBreakSlots, getToday, DAYS, H, M, hexToRgba, esc, timeToMin, weekStart as wsFn } from '../lib/helpers'
-import { generateAISummary } from '../api/ai'
-import { Download, ChevronLeft, ChevronRight, Share2, Calendar, Clock, Coffee, Target, Activity, TrendingUp, ListChecks, Brain, ArrowRight } from 'lucide-react'
+import SummaryCard from '../components/SummaryCard'
+import { Download, ChevronLeft, ChevronRight, Share2, Calendar, Clock, Coffee, Target, Activity, TrendingUp, ListChecks, ArrowRight } from 'lucide-react'
 
 export default function WeeklyReport({ profile }) {
   const { activities } = useActivities()
@@ -14,8 +14,6 @@ export default function WeeklyReport({ profile }) {
   const [weekOffset, setWeekOffset] = useState(0)
   const [animKey, setAnimKey] = useState(0)
   const contentRef = useRef(null)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiResult, setAiResult] = useState(null)
 
   const weekRange = useMemo(() => {
     const w = wsFn()
@@ -154,22 +152,6 @@ export default function WeeklyReport({ profile }) {
 
   function getCat(id) {
     return categories.find(c => c.id === id) || { id, name: id, icon: '📌', color: '#3b82f6' }
-  }
-
-  async function genAI() {
-    setAiLoading(true)
-    setAiResult(null)
-    try {
-      const summ = wa.map(a =>
-        `${a.date} ${a.slot}: [${a.category}] ${a.name}${a.notes ? ' — ' + a.notes : ''}`
-      ).join('\n') || 'No activities logged.'
-      const result = await generateAISummary(summ)
-      setAiResult(result)
-    } catch {
-      setAiResult(null)
-      toast('AI generation failed. Server may not be running.', 'er')
-    }
-    setAiLoading(false)
   }
 
   async function handleShare() {
@@ -503,27 +485,7 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      {/* AI Summary */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, minHeight: 30 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 700, lineHeight: 1.3 }}><Brain size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> AI Productivity Summary</div>
-        <button className="btn bs bsm" onClick={genAI} disabled={aiLoading}>
-          {aiLoading ? 'Generating…' : 'Generate →'}
-        </button>
-      </div>
-      <div id="ai_area" style={{ marginBottom: 16 }}>
-        <div className="aibox">
-          <div className="ailbl">AI Summary</div>
-          <div className="aitxt" style={aiLoading ? { color: 'var(--tx2)' } : aiResult ? {} : { color: 'var(--tx2)' }}>
-            {aiLoading ? (
-              <span className="puls">Analyzing…</span>
-            ) : aiResult ? (
-              aiResult
-            ) : (
-              'Click "Generate" for a personalized productivity analysis.'
-            )}
-          </div>
-        </div>
-      </div>
+      <SummaryCard profile={profile} />
     </div>
   )
 }
