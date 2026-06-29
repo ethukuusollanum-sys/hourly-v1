@@ -47,6 +47,11 @@ export default function WeeklyReport({ profile }) {
   const breakConfigs = settings?.breakSlots || []
   const workStart = settings?.workStart || '09:00'
   const workEnd = settings?.workEnd || '18:00'
+  const workingDays = settings?.workingDays || [1, 2, 3, 4, 5, 6]
+
+  const workingDaysInWeek = useMemo(() =>
+    weekRange.filter(d => workingDays.includes(new Date(d + 'T12:00:00').getDay())),
+  [weekRange, workingDays])
 
   const scheduledBreakInfo = useMemo(() => {
     const allDaySlots = getSlots(workStart, workEnd)
@@ -72,8 +77,9 @@ export default function WeeklyReport({ profile }) {
       return cat?.name === 'Break'
     }).length
 
-    const schedMins = scheduledBreakInfo.minsPerDay * weekRange.length
-    const schedSessions = scheduledBreakInfo.sessionsPerDay * weekRange.length
+    const workingDayCount = workingDaysInWeek.length
+    const schedMins = scheduledBreakInfo.minsPerDay * workingDayCount
+    const schedSessions = scheduledBreakInfo.sessionsPerDay * workingDayCount
 
     const totalBreaks = loggedBreaks + schedMins
     const totalTracked = loggedWork + totalBreaks
@@ -86,13 +92,14 @@ export default function WeeklyReport({ profile }) {
     const breakSessions = loggedBreakSessions + schedSessions
     const activeDays = new Set(wa.map(a => a.date)).size
 
-    const dayMins = weekRange.map(d =>
+    const dayMins = workingDaysInWeek.map(d =>
       (wa.filter(a => a.date === d).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)) + scheduledBreakInfo.minsPerDay
     )
     const maxDay = Math.max(...dayMins, 0)
     const minDay = activeDays > 0 ? Math.min(...dayMins.filter(x => x > 0), 0) : 0
     const maxDayIdx = dayMins.indexOf(maxDay)
     const minDayIdx = activeDays > 0 ? dayMins.indexOf(minDay) : -1
+    const offDays = weekRange.length - workingDayCount
 
     const sessionDurs = wa
       .filter(a => {
@@ -119,9 +126,9 @@ export default function WeeklyReport({ profile }) {
       workSessions, breakSessions, activeDays, focusScore,
       maxDay, minDay, maxDayIdx, minDayIdx, longestWork, longestBreak,
       mostFreq: mostFreq || null, dayMins,
-      schedMins, loggedBreaks,
+      schedMins, loggedBreaks, workingDayCount, offDays,
     }
-  }, [wa, categories, weekRange, scheduledBreakInfo])
+  }, [wa, categories, weekRange, scheduledBreakInfo, workingDaysInWeek])
 
   function goWeek(offset) {
     setWeekOffset(offset)
@@ -129,6 +136,7 @@ export default function WeeklyReport({ profile }) {
   }
 
   const dayLabels = useMemo(() => weekRange.map(d => DAYS[new Date(d + 'T12:00:00').getDay()]), [weekRange])
+  const workingDayLabels = useMemo(() => workingDaysInWeek.map(d => DAYS[new Date(d + 'T12:00:00').getDay()]), [workingDaysInWeek])
 
   const catMap = useMemo(() => {
     const m = {}
@@ -136,11 +144,11 @@ export default function WeeklyReport({ profile }) {
       m[a.category] = (m[a.category] || 0) + (parseInt(a.duration) || 60)
     })
     if (scheduledBreakInfo.minsPerDay > 0) {
-      const schedTotal = scheduledBreakInfo.minsPerDay * weekRange.length
+      const schedTotal = scheduledBreakInfo.minsPerDay * workingDaysInWeek.length
       m['Break'] = (m['Break'] || 0) + schedTotal
     }
     return m
-  }, [wa, scheduledBreakInfo, weekRange])
+  }, [wa, scheduledBreakInfo, workingDaysInWeek])
 
   const slots = getSlots(profile?.settings?.workStart || '09:00', profile?.settings?.workEnd || '18:00')
 
@@ -240,7 +248,7 @@ export default function WeeklyReport({ profile }) {
         </div>
         <div className="sc scgr">
           <div className="sl2">Days Active</div>
-          <div className="sv">{stats.activeDays}<span> / 7</span></div>
+          <div className="sv">{stats.activeDays}<span> / {stats.workingDayCount}</span></div>
           <div className="su2">{wa.length} total activities</div>
         </div>
       </div>
@@ -306,7 +314,7 @@ export default function WeeklyReport({ profile }) {
           <div className="ch"><div className="ct">Daily Hours</div></div>
           <div style={{ padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
-              {weekRange.map((d, i) => {
+              {workingDaysInWeek.map((d, i) => {
                 const pct = stats.maxDay > 0 ? Math.round((stats.dayMins[i] / stats.maxDay) * 100) || 0 : 0
                 const isT = d === getToday()
                 return (
@@ -319,14 +327,14 @@ export default function WeeklyReport({ profile }) {
                     <div style={{
                       fontSize: 9, color: isT ? 'var(--ac)' : 'var(--tx3)',
                       fontWeight: isT ? 700 : 400,
-                    }}>{dayLabels[i]}</div>
+                    }}>{workingDayLabels[i]}</div>
                   </div>
                 )
               })}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '10.5px', color: 'var(--tx3)', fontFamily: 'var(--mo)' }}>
               <span>{H(stats.minDay)}h {M(stats.minDay)}m</span>
-              <span>avg {H(Math.round(stats.total / 7))}h {M(Math.round(stats.total / 7))}m</span>
+              <span>avg {H(Math.round(stats.total / stats.workingDayCount))}h {M(Math.round(stats.total / stats.workingDayCount))}m</span>
               <span>{H(stats.maxDay)}h {M(stats.maxDay)}m</span>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
-import { THEMES, applyTheme, esc, hexToRgba } from '../lib/helpers'
+import { THEMES, DAYS, applyTheme, esc, hexToRgba } from '../lib/helpers'
 import { Camera, LogOut, Pencil, Trash2, Download, HelpCircle, Mail, Info, ExternalLink, SwitchCamera } from 'lucide-react'
 import TimePicker from '../components/TimePicker'
 
@@ -18,6 +18,7 @@ export default function Settings({ profile, onUpdate }) {
   const [breakSlots, setBreakSlots] = useState(settings?.breakSlots || [])
   const [team, setTeam] = useState(settings?.team || '')
   const [notif, setNotif] = useState(settings?.notif || false)
+  const [workingDays, setWorkingDays] = useState(settings?.workingDays || [1, 2, 3, 4, 5, 6])
   const [selectedTheme, setSelectedTheme] = useState(
     THEMES.findIndex(t => t.ac === (settings?.theme?.ac || '#00d4aa'))
   )
@@ -33,9 +34,21 @@ export default function Settings({ profile, onUpdate }) {
     setBreakSlots(profile.settings?.breakSlots || [])
     setTeam(profile.settings?.team || '')
     setNotif(profile.settings?.notif || false)
+    setWorkingDays(profile.settings?.workingDays || [1, 2, 3, 4, 5, 6])
     const ti = THEMES.findIndex(t => t.ac === (profile.settings?.theme?.ac || '#00d4aa'))
     setSelectedTheme(ti >= 0 ? ti : 0)
   }, [profile])
+
+  function toggleDay(dayIdx) {
+    setWorkingDays(prev => {
+      if (prev.includes(dayIdx)) {
+        if (prev.length <= 1) return prev
+        return prev.filter(d => d !== dayIdx)
+      }
+      return [...prev, dayIdx].sort()
+    })
+    markDirty()
+  }
 
   function markDirty() { setDirty(true) }
 
@@ -60,7 +73,7 @@ export default function Settings({ profile, onUpdate }) {
       workStart, workEnd,
       breakSlots,
       team: team.trim() || 'My Team',
-      role: role.trim(), notif, theme,
+      role: role.trim(), notif, theme, workingDays,
     }
 
     const updates = {
@@ -214,6 +227,31 @@ export default function Settings({ profile, onUpdate }) {
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: 7 }}>
             Same team name = shared Team View.
+          </div>
+        </div>
+      </div>
+
+      {/* ===== Working Schedule ===== */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Working Schedule</div>
+      <div className="card m4">
+        <div className="ch"><div className="ct">Working Days</div></div>
+        <div style={{ padding: 18 }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {[0, 1, 2, 3, 4, 5, 6].map(i => (
+              <button
+                key={i}
+                className={`chip${workingDays.includes(i) ? ' on' : ''}`}
+                onClick={() => toggleDay(i)}
+                style={{ flex: 1, minWidth: 40, textAlign: 'center', padding: '6px 8px', fontSize: 11 }}
+              >
+                {DAYS[i]}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--tx3)', marginTop: 8 }}>
+            {workingDays.length >= 7
+              ? 'Every day is a working day'
+              : `${workingDays.map(i => DAYS[i]).join(', ')} — working days`}
           </div>
         </div>
       </div>
