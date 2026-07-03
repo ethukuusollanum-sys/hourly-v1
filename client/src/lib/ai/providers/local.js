@@ -233,18 +233,18 @@ function buildSummary(type, stats, categories) {
 
 function buildDailySummary(s, categories) {
   const dateLabel = dayName(s.dateRange.start) + ', ' + formatDateLabel(s.dateRange.start)
-  const parts = [`## 📊 Daily Productivity Summary — ${dateLabel}`]
+  const parts = [`[Daily Productivity Summary - ${dateLabel}]`]
   parts.push('')
-  parts.push(`You completed **${s.workSessions} work sessions** totaling **${timeStr(s.totalWork)}**.`)
-  parts.push(`You spent **${timeStr(s.totalBreak)} on breaks** (${timeStr(s.schedBreakMins)} scheduled + ${timeStr(s.totalBreakLogged)} logged),`)
-  parts.push(`resulting in a **productivity ratio of ${s.focusScore}%**.`)
+  parts.push(`You completed ${s.workSessions} work sessions totaling ${timeStr(s.totalWork)}.`)
+  parts.push(`You spent ${timeStr(s.totalBreak)} on breaks (${timeStr(s.schedBreakMins)} scheduled + ${timeStr(s.totalBreakLogged)} logged),`)
+  parts.push(`resulting in a productivity ratio of ${s.focusScore}%.`)
   if (s.mostActiveHour !== null) {
-    parts.push(`Your most productive period was around **${hourLabel(s.mostActiveHour)}**,`)
+    parts.push(`Your most productive period was around ${hourLabel(s.mostActiveHour)},`)
     parts.push(`where you logged the highest activity concentration.`)
   }
   if (s.mostFrequent) {
     const top = s.mostFrequent[0]
-    parts.push(`Your most frequent activity was **"${top}"** (${s.mostFrequent[1]} sessions).`)
+    parts.push(`Your most frequent activity was "${top}" (${s.mostFrequent[1]} sessions).`)
   }
   if (s.sortedCategories.length > 0) {
     const cats = s.sortedCategories.slice(0, 3)
@@ -253,7 +253,7 @@ function buildDailySummary(s, categories) {
     parts.push(`Categories worked on: ${cats}.`)
   }
   if (s.idleGaps > 0) {
-    parts.push(`There ${s.idleGaps === 1 ? 'was' : 'were'} **${s.idleGaps} idle gap${s.idleGaps > 1 ? 's' : ''}** totaling ${timeStr(s.idleMinutes)} between sessions.`)
+    parts.push(`There ${s.idleGaps === 1 ? 'was' : 'were'} ${s.idleGaps} idle gap${s.idleGaps > 1 ? 's' : ''} totaling ${timeStr(s.idleMinutes)} between sessions.`)
   }
   return parts.join(' ')
 }
@@ -261,26 +261,26 @@ function buildDailySummary(s, categories) {
 function buildWeeklySummary(s, categories) {
   const startLabel = formatDateLabel(s.dateRange.start)
   const endLabel = formatDateLabel(s.dateRange.end)
-  const parts = [`## 📊 Weekly Productivity Summary — ${startLabel} – ${endLabel}`]
+  const parts = [`[Weekly Productivity Summary - ${startLabel} - ${endLabel}]`]
   parts.push('')
-  parts.push(`This week you worked **${timeStr(s.totalWork)}** across **${s.activeDays} day${s.activeDays > 1 ? 's' : ''}**.`)
+  parts.push(`This week you worked ${timeStr(s.totalWork)} across ${s.activeDays} day${s.activeDays > 1 ? 's' : ''}.`)
   if (s.maxDayMins > 0 && s.maxDayIdx >= 0 && s.maxDayIdx < s.allDates.length) {
-    parts.push(`**${dayName(s.allDates[s.maxDayIdx])}** was your most productive day (${timeStr(s.maxDayMins)}).`)
+    parts.push(`${dayName(s.allDates[s.maxDayIdx])} was your most productive day (${timeStr(s.maxDayMins)}).`)
   }
   if (s.minDayMins > 0 && s.minDayIdx >= 0 && s.minDayIdx < s.allDates.length && s.minDayIdx !== s.maxDayIdx) {
-    parts.push(`**${dayName(s.allDates[s.minDayIdx])}** had the lowest activity.`)
+    parts.push(`${dayName(s.allDates[s.minDayIdx])} had the lowest activity.`)
   }
 
   if (s.mostActiveHour !== null) {
-    parts.push(`Your peak productivity hour was **${hourLabel(s.mostActiveHour)}**.`)
+    parts.push(`Your peak productivity hour was ${hourLabel(s.mostActiveHour)}.`)
   }
 
-  parts.push(`Break time totaled **${timeStr(s.totalBreak)}** (${timeStr(s.schedBreakMins)} scheduled + ${timeStr(s.totalBreakLogged)} actual).`)
-  parts.push(`Your **focus score averaged ${s.focusScore}%** across the period.`)
+  parts.push(`Break time totaled ${timeStr(s.totalBreak)} (${timeStr(s.schedBreakMins)} scheduled + ${timeStr(s.totalBreakLogged)} actual).`)
+  parts.push(`Your focus score averaged ${s.focusScore}% across the period.`)
 
   if (s.mostFrequent) {
     const top = s.mostFrequent[0]
-    parts.push(`"**${top}**" was your most frequent activity (${s.mostFrequent[1]} sessions).`)
+    parts.push(`"${top}" was your most frequent activity (${s.mostFrequent[1]} sessions).`)
   }
 
   if (s.sortedCategories.length > 0) {
@@ -290,12 +290,12 @@ function buildWeeklySummary(s, categories) {
     parts.push(`Categories: ${cats}.`)
   }
 
-  const trendMap = { improving: '📈 Your productivity trend is **improving**—great momentum!', declining: '📉 Your productivity trend is **declining**—consider reviewing your schedule.', stable: '📊 Your productivity has remained **stable** this week.' }
+  const trendMap = { improving: '[Upward] Your productivity trend is improving -- great momentum!', declining: '[Downward] Your productivity trend is declining -- consider reviewing your schedule.', stable: '[Stable] Your productivity has remained stable this week.' }
   parts.push(trendMap[s.trend] || '')
 
   if (s.breakSessions > 0) {
     const breakRatio = Math.round((s.totalBreak / s.totalTracked) * 100)
-    parts.push(`Break time accounted for **${breakRatio}%** of tracked time.`)
+    parts.push(`Break time accounted for ${breakRatio}% of tracked time.`)
   }
 
   return parts.join(' ')
@@ -304,41 +304,41 @@ function buildWeeklySummary(s, categories) {
 function buildMonthlySummary(s, categories) {
   const startLabel = formatDateLabel(s.dateRange.start)
   const endLabel = formatDateLabel(s.dateRange.end)
-  const parts = [`## 📊 Monthly Productivity Summary — ${startLabel} – ${endLabel}`]
+  const parts = [`[Monthly Productivity Summary - ${startLabel} - ${endLabel}]`]
   parts.push('')
-  parts.push(`This month you worked **${timeStr(s.totalWork)}** across **${s.activeDays} day${s.activeDays > 1 ? 's' : ''}**`)
+  parts.push(`This month you worked ${timeStr(s.totalWork)} across ${s.activeDays} day${s.activeDays > 1 ? 's' : ''}`)
 
   if (s.maxDayMins > 0 && s.maxDayIdx >= 0 && s.maxDayIdx < s.allDates.length) {
-    parts.push(`Your **most productive day** was **${dayName(s.allDates[s.maxDayIdx])}, ${formatDateLabel(s.allDates[s.maxDayIdx])}** (${timeStr(s.maxDayMins)}).`)
+    parts.push(`Your most productive day was ${dayName(s.allDates[s.maxDayIdx])}, ${formatDateLabel(s.allDates[s.maxDayIdx])} (${timeStr(s.maxDayMins)}).`)
   }
-  parts.push(`**Total break time**: ${timeStr(s.totalBreak)}.`)
-  parts.push(`**Total activities completed**: ${s.workSessions + s.breakSessions}.`)
-  parts.push(`**Average daily work**: ${timeStr(s.avgDailyWork)}.`)
-  parts.push(`**Longest work session**: ${timeStr(s.longestWork)}.`)
-  parts.push(`**Average work session**: ${timeStr(s.avgWorkSession)}.`)
-  parts.push(`**Focus score**: ${s.focusScore}%.`)
+  parts.push(`Total break time: ${timeStr(s.totalBreak)}.`)
+  parts.push(`Total activities completed: ${s.workSessions + s.breakSessions}.`)
+  parts.push(`Average daily work: ${timeStr(s.avgDailyWork)}.`)
+  parts.push(`Longest work session: ${timeStr(s.longestWork)}.`)
+  parts.push(`Average work session: ${timeStr(s.avgWorkSession)}.`)
+  parts.push(`Focus score: ${s.focusScore}%.`)
 
   if (s.mostActiveHour !== null) {
-    parts.push(`**Most productive hour**: ${hourLabel(s.mostActiveHour)}.`)
+    parts.push(`Most productive hour: ${hourLabel(s.mostActiveHour)}.`)
   }
 
   if (s.mostFrequent) {
-    parts.push(`**Most frequent activity**: "${s.mostFrequent[0]}" (${s.mostFrequent[1]} sessions).`)
+    parts.push(`Most frequent activity: "${s.mostFrequent[0]}" (${s.mostFrequent[1]} sessions).`)
   }
 
   if (s.sortedCategories.length > 0) {
     const cats = s.sortedCategories.slice(0, 5)
       .map(([id, d]) => `${getCategoryName(id, categories)} (${timeStr(d)})`)
       .join(', ')
-    parts.push(`**Categories**: ${cats}.`)
+    parts.push(`Categories: ${cats}.`)
   }
 
-  const trendMap = { improving: '📈 Your productivity trend this month is **improving**.', declining: '📉 Your productivity trend this month is **declining**—review your schedule.', stable: '📊 Your productivity has been **stable** throughout the month.' }
+  const trendMap = { improving: '[Upward] Your productivity trend this month is improving.', declining: '[Downward] Your productivity trend this month is declining - review your schedule.', stable: '[Stable] Your productivity has been stable throughout the month.' }
   parts.push(trendMap[s.trend] || '')
 
   if (s.avgDailyWork > 0) {
     const weeklyAvg = Math.round(s.avgDailyWork * 7)
-    parts.push(`**Projected weekly total** at current pace: ${timeStr(weeklyAvg)}.`)
+    parts.push(`Projected weekly total at current pace: ${timeStr(weeklyAvg)}.`)
   }
 
   return parts.join(' ')
@@ -359,40 +359,40 @@ export function buildRecommendations(stats, settings) {
   const breakRatio = s.totalTracked > 0 ? Math.round((s.totalBreak / s.totalTracked) * 100) : 0
 
   if (s.focusScore < 60) {
-    recs.push({ icon: '🎯', text: 'Your focus score is low. Try reducing break durations and minimizing distractions between sessions.' })
+    recs.push({ icon: 'F', text: 'Your focus score is low. Try reducing break durations and minimizing distractions between sessions.' })
   } else if (s.focusScore < 75) {
-    recs.push({ icon: '⚡', text: 'Consider shortening your breaks slightly to improve your focus score from its current level.' })
+    recs.push({ icon: 'B', text: 'Consider shortening your breaks slightly to improve your focus score from its current level.' })
   }
 
   const avgBreakLen = s.breakSessions > 0 ? Math.round(s.totalBreak / s.breakSessions) : 0
   if (avgBreakLen > 0 && s.schedBreakMins > 0) {
     const schedPerSession = Math.round(s.schedBreakMins / Math.max(s.workingDates.length, 1))
     if (avgBreakLen > schedPerSession * 1.3) {
-      recs.push({ icon: '☕', text: `Your average break session (${timeStr(avgBreakLen)}) exceeds your scheduled target. Try keeping breaks within the planned duration.` })
+      recs.push({ icon: 'C', text: `Your average break session (${timeStr(avgBreakLen)}) exceeds your scheduled target. Try keeping breaks within the planned duration.` })
     }
   }
 
   if (s.idleGaps > 0) {
-    recs.push({ icon: '⏳', text: `You had ${s.idleGaps} idle gap${s.idleGaps > 1 ? 's' : ''} totaling ${timeStr(s.idleMinutes)}. Try chaining tasks together to reduce switching overhead.` })
+    recs.push({ icon: 'T', text: `You had ${s.idleGaps} idle gap${s.idleGaps > 1 ? 's' : ''} totaling ${timeStr(s.idleMinutes)}. Try chaining tasks together to reduce switching overhead.` })
   }
 
   if (s.mostActiveHour !== null) {
-    recs.push({ icon: '⏰', text: `Your focus is highest around ${hourLabel(s.mostActiveHour)}. Schedule your most important tasks during this window.` })
+    recs.push({ icon: 'H', text: `Your focus is highest around ${hourLabel(s.mostActiveHour)}. Schedule your most important tasks during this window.` })
   }
 
   if (s.sortedActivities.length >= 3) {
     const top3 = s.sortedActivities.slice(0, 3).map(([n]) => n)
     if (new Set(top3).size > 1) {
-      recs.push({ icon: '📦', text: `Consider grouping similar tasks like "${top3.slice(0, 2).join('", "')}" together to reduce context switching.` })
+      recs.push({ icon: 'G', text: `Consider grouping similar tasks like "${top3.slice(0, 2).join('", "')}" together to reduce context switching.` })
     }
   }
 
   if (s.workSessions >= 6 && s.avgWorkSession < 30) {
-    recs.push({ icon: '🎯', text: 'Many of your sessions are under 30 minutes. Try longer focus blocks for deeper work.' })
+    recs.push({ icon: 'D', text: 'Many of your sessions are under 30 minutes. Try longer focus blocks for deeper work.' })
   }
 
   if (s.trend === 'declining') {
-    recs.push({ icon: '🔄', text: 'Your productivity is trending downward. Try reviewing your weekly schedule and identifying low-energy periods.' })
+    recs.push({ icon: 'R', text: 'Your productivity is trending downward. Try reviewing your weekly schedule and identifying low-energy periods.' })
   }
 
   if (s.activeDays > 0 && s.avgDailyWork > 0) {
@@ -401,12 +401,12 @@ export function buildRecommendations(stats, settings) {
       ? Math.round(Math.max(...workByDay) - Math.min(...workByDay.filter(m => m > 0)))
       : 0
     if (variance > 120 && s.activeDays >= 3) {
-      recs.push({ icon: '📅', text: `Your daily work varies significantly (${timeStr(variance)} range). Aim for a more consistent daily schedule.` })
+      recs.push({ icon: 'V', text: `Your daily work varies significantly (${timeStr(variance)} range). Aim for a more consistent daily schedule.` })
     }
   }
 
   if (s.totalBreak > s.totalWork) {
-    recs.push({ icon: '⚠️', text: 'Break time exceeds work time. Try reducing breaks to improve overall productivity.' })
+    recs.push({ icon: 'W', text: 'Break time exceeds work time. Try reducing breaks to improve overall productivity.' })
   }
 
   return recs.slice(0, 5)

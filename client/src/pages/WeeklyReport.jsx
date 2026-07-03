@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
-import { getSlots, getBreakSlots, getToday, DAYS, H, M, hexToRgba, esc, timeToMin, weekStart as wsFn } from '../lib/helpers'
+import { getSlots, getBreakSlots, getToday, DAYS, H, M, esc, timeToMin, weekStart as wsFn } from '../lib/helpers'
 import SummaryCard from '../components/SummaryCard'
-import { Download, ChevronLeft, ChevronRight, Share2, Calendar, Clock, Coffee, Target, Activity, TrendingUp, ListChecks, ArrowRight } from 'lucide-react'
+import { Download, ChevronLeft, ChevronRight, Share2, Calendar, Clock, Coffee, Target, Activity, TrendingUp, ListChecks, ArrowRight, Users } from 'lucide-react'
 
 export default function WeeklyReport({ profile }) {
   const { activities } = useActivities()
@@ -151,7 +151,7 @@ export default function WeeklyReport({ profile }) {
   const slots = getSlots(profile?.settings?.workStart || '09:00', profile?.settings?.workEnd || '18:00')
 
   function getCat(id) {
-    return categories.find(c => c.id === id) || { id, name: id, icon: '📌', color: '#3b82f6' }
+    return categories.find(c => c.id === id) || { id, name: id, icon: 'star', color: '#3b82f6' }
   }
 
   async function handleShare() {
@@ -170,8 +170,7 @@ export default function WeeklyReport({ profile }) {
 
   return (
     <div>
-      {/* Week Navigation */}
-      <div className="card m4" style={{ position: 'sticky', top: 60, zIndex: 10, background: 'var(--sf)' }}>
+      <div className="card m4" style={{ position: 'sticky', top: 60, zIndex: 'var(--z-sticky)', background: 'var(--sf)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}>
           <button className="ib" onClick={() => goWeek(weekOffset - 1)} aria-label="Previous week">
             <ChevronLeft size={16} />
@@ -211,7 +210,6 @@ export default function WeeklyReport({ profile }) {
         )}
       </div>
 
-      {/* Stats Cards */}
       <div key={`stats-${animKey}`} ref={contentRef} className="sg m4" style={{ animation: 'fi .25s ease' }}>
         <div className="sc scg">
           <div className="sl2">Focus Score</div>
@@ -264,15 +262,14 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      {/* Work vs Break Doughnut + Daily Hours */}
       <div className="tc2 m4">
         <div className="card">
           <div className="ch"><div className="ct">Work vs Break</div></div>
           <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <div style={{
+            <div role="img" aria-label={`Donut chart: Work ${stats.focusScore}%, Break ${100 - stats.focusScore}%`} style={{
               width: 90, height: 90, borderRadius: '50%',
               background: stats.total > 0
-                ? `conic-gradient(var(--ac) 0% ${stats.focusScore}%, #f97316 ${stats.focusScore}% 100%)`
+                ? `conic-gradient(var(--ac) 0% ${stats.focusScore}%, var(--or) ${stats.focusScore}% 100%)`
                 : 'var(--bd)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', flexShrink: 0,
@@ -287,14 +284,14 @@ export default function WeeklyReport({ profile }) {
             </div>
             <div style={{ display: 'flex', gap: 16, fontSize: 11.5, fontFamily: 'var(--mo)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac)' }} /> Work {H(stats.work)}h {M(stats.work)}m</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316' }} /> Break {H(stats.breaks)}h {M(stats.breaks)}m</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--or)' }} /> Break {H(stats.breaks)}h {M(stats.breaks)}m</span>
             </div>
           </div>
         </div>
 
         <div className="card">
           <div className="ch"><div className="ct">Daily Hours</div></div>
-          <div style={{ padding: '16px 18px' }}>
+          <div style={{ padding: '16px 18px' }} aria-label={`Bar chart: Daily hours for ${workingDayLabels.join(', ')}`}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
               {workingDaysInWeek.map((d, i) => {
                 const pct = stats.maxDay > 0 ? Math.round((stats.dayMins[i] / stats.maxDay) * 100) || 0 : 0
@@ -305,7 +302,7 @@ export default function WeeklyReport({ profile }) {
                       width: '100%', background: isT ? 'var(--ac)' : 'var(--bd2)',
                       borderRadius: '4px 4px 0 0', height: `${Math.max(3, pct)}%`,
                       minHeight: 3, transition: 'height .5s ease',
-                    }} />
+                    }} title={`${workingDayLabels[i]}: ${H(stats.dayMins[i])}h ${M(stats.dayMins[i])}m`} />
                     <div style={{
                       fontSize: 9, color: isT ? 'var(--ac)' : 'var(--tx3)',
                       fontWeight: isT ? 700 : 400,
@@ -323,7 +320,6 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      {/* Weekly Summary */}
       <div className="card m4">
         <div className="ch"><div className="ct">Weekly Summary</div></div>
         <div style={{ padding: '4px 18px' }}>
@@ -337,7 +333,7 @@ export default function WeeklyReport({ profile }) {
           </div>
           <div className="cat-row">
             <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Scheduled Break Time</div>
-            <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: '#f97316', fontWeight: 600 }}>{H(stats.schedMins)}h {M(stats.schedMins)}m</div>
+            <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: 'var(--or)', fontWeight: 600 }}>{H(stats.schedMins)}h {M(stats.schedMins)}m</div>
           </div>
           <div className="cat-row">
             <div style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>Logged Break Time</div>
@@ -356,13 +352,12 @@ export default function WeeklyReport({ profile }) {
               {stats.mostFreq ? 'Most Frequent Task' : 'Most Frequent'}
             </div>
             <div style={{ fontFamily: 'var(--mo)', fontSize: 13, color: 'var(--ac)', fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {stats.mostFreq ? `${esc(stats.mostFreq[0])} (${stats.mostFreq[1]}×)` : 'No data'}
+              {stats.mostFreq ? `${esc(stats.mostFreq[0])} (${stats.mostFreq[1]}\u00d7)` : 'No data'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Category Breakdown */}
       <div className="card m4">
         <div className="ch"><div className="ct">Activity Categories</div></div>
         <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -390,10 +385,9 @@ export default function WeeklyReport({ profile }) {
         </div>
       </div>
 
-      {/* Activity Heatmap */}
       <div className="card m4">
-        <div className="ch"><div className="ct">Activity Heatmap</div><div className="cs">Hours × Days</div></div>
-        <div style={{ padding: '16px 18px', overflowX: 'auto' }}>
+        <div className="ch"><div className="ct">Activity Heatmap</div><div className="cs">Hours x Days</div></div>
+        <div style={{ padding: '16px 18px', overflowX: 'auto' }} role="region" aria-label="Activity heatmap: hours by day">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -424,7 +418,7 @@ export default function WeeklyReport({ profile }) {
                         <div style={{
                           width: '100%', aspectRatio: 1, borderRadius: 3,
                           background: `rgba(0,212,170,${alpha.toFixed(2)})`,
-                        }} title={`${d} ${slot}: ${sm}m`} />
+                        }} title={`${d} ${slot}: ${sm}m`} aria-label={`${d} ${slot}: ${sm} minutes`} />
                       </td>
                     )
                   })}
@@ -435,14 +429,13 @@ export default function WeeklyReport({ profile }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: '10.5px', color: 'var(--tx3)' }}>
             <span>Less</span>
             {[0.06, 0.25, 0.45, 0.65, 0.85].map(a => (
-              <div key={a} style={{ width: 12, height: 12, borderRadius: 2, background: `rgba(0,212,170,${a})` }} />
+              <div key={a} style={{ width: 12, height: 12, borderRadius: 2, background: `rgba(0,212,170,${a})` }} aria-hidden="true" />
             ))}
             <span>More</span>
           </div>
         </div>
       </div>
 
-      {/* Top Activities */}
       <div className="card m4">
         <div className="ch"><div className="ct">Top Activities</div><div className="cs">Most frequent</div></div>
         <div style={{ padding: '10px 18px' }}>
@@ -462,25 +455,24 @@ export default function WeeklyReport({ profile }) {
                 <div style={{ flex: 1, minWidth: 0, fontSize: '12.5px', fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {esc(nm)}
                 </div>
-                <div style={{ fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx2)' }}>{cnt}×</div>
+                <div style={{ fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx2)' }}>{cnt}x</div>
               </div>
             ))
           ) : <div style={{ color: 'var(--tx3)', fontSize: '12.5px', padding: '10px 0' }}>No data yet</div>}
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="card m4">
         <div className="ch"><div className="ct">Quick Actions</div></div>
         <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button className="btn bs bfw" onClick={handleExport} style={{ justifyContent: 'flex-start', gap: 10, padding: '0 16px' }}>
-            <Download size={14} /> Export Weekly Report
+            <Download size={14} aria-hidden="true" /> Export Weekly Report
           </button>
           <button className="btn bs bfw" onClick={handleShare} style={{ justifyContent: 'flex-start', gap: 10, padding: '0 16px' }}>
-            <Share2 size={14} /> Share Weekly Report
+            <Share2 size={14} aria-hidden="true" /> Share Weekly Report
           </button>
           <button className="btn bs bfw" onClick={() => navigate('/daily')} style={{ justifyContent: 'flex-start', gap: 10, padding: '0 16px' }}>
-            <ListChecks size={14} /> View Detailed Logs <ArrowRight size={12} style={{ marginLeft: 'auto' }} />
+            <ListChecks size={14} aria-hidden="true" /> View Detailed Logs <ArrowRight size={12} style={{ marginLeft: 'auto' }} />
           </button>
         </div>
       </div>

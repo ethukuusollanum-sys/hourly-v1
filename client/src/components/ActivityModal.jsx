@@ -5,6 +5,7 @@ import { supabase } from '../config/supabase'
 import { useAuth } from '../context/AuthContext'
 import { getToday, getSlotDuration, getSuggestedWorkStart, hasOverlapWithBreaks, parseSlot, timeToMin, minToString } from '../lib/helpers'
 import { X } from 'lucide-react'
+import CatIcon from './CatIcon'
 
 export default function ActivityModal({ profile }) {
   const { user } = useAuth()
@@ -20,6 +21,7 @@ export default function ActivityModal({ profile }) {
   const [duration, setDuration] = useState('60')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const [blurErrors, setBlurErrors] = useState({})
 
   const categories = profile?.categories || []
   const breakConfigs = profile?.settings?.breakSlots || []
@@ -79,6 +81,23 @@ export default function ActivityModal({ profile }) {
   const afterThisLog = Math.max(0, remaining - durNum)
   const canSave = name.trim() && durNum > 0 && timeFormatValid && !overlapError && !exceedsRemaining && !endAfterSlot
 
+  function validateOnBlur(field) {
+    const errs = { ...blurErrors }
+    if (field === 'workStart') {
+      if (workStart && !timeFormatValid) errs.workStart = 'Use HH:MM format (e.g. 09:30)'
+      else if (startAfterSlotEnd) errs.workStart = 'Start time is outside this slot'
+      else if (overlapError) errs.workStart = overlapError
+      else delete errs.workStart
+    }
+    if (field === 'duration') {
+      if (durNum <= 0) errs.duration = 'Duration must be greater than 0'
+      else if (exceedsRemaining) errs.duration = 'Duration exceeds available time in this slot'
+      else if (endAfterSlot) errs.duration = 'Work end time exceeds slot boundary'
+      else delete errs.duration
+    }
+    setBlurErrors(errs)
+  }
+
   function openModal(slotVal, editData = null) {
     setSlot(slotVal)
     const limit = getSlotDuration(slotVal)
@@ -113,6 +132,7 @@ export default function ActivityModal({ profile }) {
       setNotes('')
       setSlotDate(today)
     }
+    setBlurErrors({})
     setOpen(true)
   }
 
@@ -120,6 +140,7 @@ export default function ActivityModal({ profile }) {
     setOpen(false)
     setEditId(null)
     setSlot(null)
+    setBlurErrors({})
   }
 
   async function save() {
@@ -140,7 +161,7 @@ export default function ActivityModal({ profile }) {
           .eq('id', editId)
         if (error) throw error
         setActivities(prev => prev.map(a => a.id === editId ? { ...a, name: name.trim(), category, duration: dur, notes: notes.trim(), work_start: workStart, slot: slot } : a))
-        toast('Updated ✓', 'ok')
+        toast('Updated', 'ok')
       } else {
           const { data, error } = await supabase
             .from('activities')
@@ -158,7 +179,7 @@ export default function ActivityModal({ profile }) {
           .single()
         if (error) throw error
         setActivities(prev => [...prev, data])
-        toast('Logged ✓', 'ok')
+        toast('Logged', 'ok')
       }
       closeModal()
     } catch (err) {
@@ -193,7 +214,7 @@ export default function ActivityModal({ profile }) {
             <div className="mt2">{editId ? 'Edit Task' : 'Log Task'}</div>
             <div className="ms">{slot || '–'}</div>
           </div>
-          <button className="ib" onClick={closeModal} style={{ width: 28, height: 28 }}>
+          <button className="ib" onClick={closeModal} style={{ width: 28, height: 28 }} aria-label="Close">
             <X size={15} />
           </button>
         </div>
@@ -226,7 +247,7 @@ export default function ActivityModal({ profile }) {
                     className={`chip${category === cat.id ? ' on' : ''}`}
                     onClick={() => setCategory(cat.id)}
                   >
-                    {cat.icon} {cat.name}
+                    <CatIcon icon={cat.icon} size={11} /> {cat.name}
                   </button>
                 ))}
               </div>
@@ -239,14 +260,16 @@ export default function ActivityModal({ profile }) {
                   placeholder="HH:MM"
                   value={workStart}
                   onChange={e => setWorkStart(e.target.value)}
+                  onBlur={() => validateOnBlur('workStart')}
                   onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                   maxLength={5}
-                  style={overlapError || (workStart && !timeFormatValid) ? { borderColor: 'var(--red)' } : undefined}
+                  style={blurErrors.workStart || overlapError ? { borderColor: 'var(--red)' } : undefined}
                 />
               </div>
-              {overlapError && <div className="errmsg">{overlapError}</div>}
-              {startAfterSlotEnd && <div className="errmsg">Start time is outside this slot</div>}
-              {workStart && !timeFormatValid && <div className="errmsg">Use HH:MM format (e.g. 09:30)</div>}
+              {blurErrors.workStart && <div className="errmsg" role="alert">{blurErrors.workStart}</div>}
+              {overlapError && !blurErrors.workStart && <div className="errmsg" role="alert">{overlapError}</div>}
+              {!blurErrors.workStart && startAfterSlotEnd && <div className="errmsg" role="alert">Start time is outside this slot</div>}
+              {!blurErrors.workStart && workStart && !timeFormatValid && <div className="errmsg" role="alert">Use HH:MM format (e.g. 09:30)</div>}
             </div>
           </div>
           <div className="tc2">
@@ -257,26 +280,30 @@ export default function ActivityModal({ profile }) {
                 inputMode="numeric"
                 value={duration}
                 onChange={e => setDuration(e.target.value)}
+                onBlur={() => validateOnBlur('duration')}
                 onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                 maxLength={3}
-                style={exceedsRemaining || endAfterSlot ? { borderColor: 'var(--red)' } : undefined}
+                style={blurErrors.duration || exceedsRemaining || endAfterSlot ? { borderColor: 'var(--red)' } : undefined}
               />
               <div style={{ fontSize: 11.5, color: 'var(--tx3)', marginTop: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>Used: {logTotal}m</span>
-                  <span>·</span>
+                  <span>&middot;</span>
                   <span>Limit: {slotLimit}m</span>
-                  <span>·</span>
+                  <span>&middot;</span>
                   <span style={{ color: remaining <= 5 ? 'var(--red)' : remaining <= 15 ? '#e6a817' : 'var(--ac)', fontWeight: 600 }}>Avail: {remaining}m</span>
                 </div>
                 {durNum > 0 && !exceedsRemaining && !endAfterSlot && (
                   <span style={{ color: 'var(--tx2)' }}>After this log: {afterThisLog}m remaining</span>
                 )}
-                {exceedsRemaining && durNum > 0 && (
-                  <span style={{ color: 'var(--red)' }}>Entered duration exceeds available time in this slot</span>
+                {blurErrors.duration && durNum > 0 && (
+                  <span style={{ color: 'var(--red)' }} role="alert">{blurErrors.duration}</span>
                 )}
-                {endAfterSlot && durNum > 0 && (
-                  <span style={{ color: 'var(--red)' }}>Work end time exceeds slot boundary</span>
+                {!blurErrors.duration && exceedsRemaining && durNum > 0 && (
+                  <span style={{ color: 'var(--red)' }} role="alert">Entered duration exceeds available time in this slot</span>
+                )}
+                {!blurErrors.duration && endAfterSlot && durNum > 0 && (
+                  <span style={{ color: 'var(--red)' }} role="alert">Work end time exceeds slot boundary</span>
                 )}
               </div>
             </div>

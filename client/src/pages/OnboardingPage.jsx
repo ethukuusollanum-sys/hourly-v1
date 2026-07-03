@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { DEFAULT_CATEGORIES } from '../lib/helpers'
 import TimePicker from '../components/TimePicker'
+import { X } from 'lucide-react'
 
 export default function OnboardingPage({ profile, onComplete }) {
   const { user } = useAuth()
@@ -41,7 +42,7 @@ export default function OnboardingPage({ profile, onComplete }) {
       toast('Failed to save. Check your connection.', 'er')
       console.error(error)
     } else {
-      toast('Workspace configured! 🎉', 'ok')
+      toast('Workspace configured!', 'ok')
       onComplete()
     }
     setSaving(false)
@@ -68,11 +69,11 @@ export default function OnboardingPage({ profile, onComplete }) {
                 <TimePicker value={bs.start} onChange={v => {
                   const next = [...breakSlots]; next[i] = { ...next[i], start: v }; setBreakSlots(next)
                 }} style={{ flex: 1 }} />
-                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
+                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>&rarr;</span>
                 <TimePicker value={bs.end} onChange={v => {
                   const next = [...breakSlots]; next[i] = { ...next[i], end: v }; setBreakSlots(next)
                 }} style={{ flex: 1 }} />
-                <button className="ib del" onClick={() => setBreakSlots(breakSlots.filter((_, j) => j !== i))} style={{ flexShrink: 0 }}>✕</button>
+                <button className="ib del" onClick={() => setBreakSlots(breakSlots.filter((_, j) => j !== i))} style={{ flexShrink: 0 }} aria-label="Remove break slot"><X size={12} /></button>
               </div>
             ))}
             <button className="btn bs bsm" onClick={() => setBreakSlots([...breakSlots, { start: '', end: '' }])} style={{ marginTop: 2 }}>+ Add Break Slot</button>
@@ -98,7 +99,7 @@ export default function OnboardingPage({ profile, onComplete }) {
               if (typeof Notification === 'undefined') return
               if (Notification.permission === 'default') Notification.requestPermission()
               else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
-            }}></button>
+            }} aria-label={`Hourly reminders ${notif ? 'on' : 'off'}`}></button>
           </div>
           <button className="btn bp bfw" onClick={finish} disabled={saving}>
             {saving ? 'Saving…' : 'Start Tracking'}

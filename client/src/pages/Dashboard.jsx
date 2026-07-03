@@ -6,6 +6,7 @@ import { Pencil, Trash2, Coffee, Clock, Calendar, CircleAlert, ListChecks, Timer
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import useBreakSync from '../hooks/useBreakSync'
+import CatIcon from '../components/CatIcon'
 
 export default function Dashboard({ profile }) {
   const { user } = useAuth()
@@ -22,7 +23,6 @@ export default function Dashboard({ profile }) {
   }).reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const tm = ta.reduce((s, a) => s + (parseInt(a.duration) || 60), 0)
   const slots = getSlots(settings.workStart || '09:00', settings.workEnd || '18:00')
-  // Reconcile auto-break rows for today against the configured break window.
   useBreakSync(user, settings, activities, setActivities)
   const breakSlotData = getBreakSlots(settings, slots)
   const breakSlotMap = new Map(breakSlotData.map(d => [d.slot, d.duration]))
@@ -31,7 +31,7 @@ export default function Dashboard({ profile }) {
   const nh = new Date().getHours().toString().padStart(2, '0')
 
   function getCat(id) {
-    return categories.find(c => c.id === id) || { id, name: id, icon: '📌', color: '#3b82f6' }
+    return categories.find(c => c.id === id) || { id, name: id, icon: 'star', color: '#3b82f6' }
   }
 
   function openEdit(act) {
@@ -139,13 +139,11 @@ export default function Dashboard({ profile }) {
                       <Timer size={10} /> {availMins}m
                     </span>
                   </div>
-                  {/* Timeline bar */}
                   {(() => {
                     const segs = getSlotSegments(slot, settings?.breakSlots || [], sa)
                     const total = timeToMin(parseSlot(slot).end) - timeToMin(parseSlot(slot).start)
                     if (total <= 0) return null
 
-                    // Merge occupied + available into chronological order
                     const allSegs = []
                     let oi = 0, ai = 0
                     while (oi < segs.occupied.length || ai < segs.available.length) {
@@ -213,7 +211,7 @@ export default function Dashboard({ profile }) {
                           {a.notes && <div className="eno">{esc(a.notes)}</div>}
                           <div className="em">
                             <span className="tag" style={{ background: tagBg, color: col, border: `1px solid ${tagBd}` }}>
-                              {cat.icon} {a.category}
+                              <CatIcon icon={cat.icon} size={10} /> {a.category}
                             </span>
                             {timeLabel ? (
                               <span className="edur" title={`${a.duration || 60}min`}>{timeLabel}</span>

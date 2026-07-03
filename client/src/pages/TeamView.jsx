@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useActivities } from '../context/ActivitiesContext'
 import { supabase } from '../config/supabase'
 import { getToday, H, M, esc, timeToMin } from '../lib/helpers'
+import CatIcon from '../components/CatIcon'
 
 export default function TeamView({ profile }) {
   const { user } = useAuth()
@@ -54,7 +55,7 @@ export default function TeamView({ profile }) {
   const myActs = activities.filter(a => a.date === today)
 
   function getCat(id) {
-    return categories.find(c => c.id === id) || { id, name: id, icon: '📌', color: '#3b82f6' }
+    return categories.find(c => c.id === id) || { id, name: id, icon: 'star', color: '#3b82f6' }
   }
 
   function TeamCard({ name, email, role, acts, isMe, photoURL }) {
@@ -77,19 +78,19 @@ export default function TeamView({ profile }) {
     }).length
 
     return (
-      <div className="tc">
+      <section className="tc">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="av av2">
-            {photoURL ? <img src={photoURL} alt="" /> : init}
+            {photoURL ? <img src={photoURL} alt={`${name || email}'s avatar`} /> : <span aria-label={name}>{init}</span>}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx)' }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
               {esc(name || email)}
               {isMe && <span style={{ fontSize: '9.5px', color: 'var(--ac)', fontFamily: 'var(--mo)', marginLeft: 4 }}>(you)</span>}
-            </div>
+            </h3>
             {role && <div style={{ fontSize: 11, color: 'var(--tx2)' }}>{esc(role)}</div>}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
-              <div className={`tdot${isA ? ' on' : ''}`}></div>
+              <div className={`tdot${isA ? ' on' : ''}`} aria-hidden="true"></div>
               <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{isA ? 'Active now' : 'Offline today'}</span>
             </div>
           </div>
@@ -119,7 +120,7 @@ export default function TeamView({ profile }) {
           <span>{H(ttm)}h {M(ttm)}m</span>
           <span>{productive} productive</span>
         </div>
-      </div>
+      </section>
     )
   }
 
@@ -141,7 +142,9 @@ export default function TeamView({ profile }) {
     <>
       <div className="sh2 m5">
         <div>
-          <div className="st">👥 {esc(tn)}</div>
+          <h2 className="st" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Users size={18} aria-hidden="true" /> {esc(tn)}
+          </h2>
           <div className="ss">Today · {mates.length + 1} members</div>
         </div>
       </div>
@@ -164,7 +167,9 @@ export default function TeamView({ profile }) {
           border: '1px dashed var(--bd2)', borderRadius: 'var(--r)',
           textAlign: 'center', color: 'var(--tx2)',
         }}>
-          <div style={{ fontSize: 20, marginBottom: 6 }}>👋</div>
+          <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'center' }}>
+            <Users size={24} color="var(--tx3)" aria-hidden="true" />
+          </div>
           <div style={{ fontSize: '13.5px', fontWeight: 600, marginBottom: 4 }}>No teammates yet</div>
           <div style={{ fontSize: 12 }}>
             Ask colleagues to sign up with team name <strong style={{ color: 'var(--ac)' }}>"{esc(tn)}"</strong>

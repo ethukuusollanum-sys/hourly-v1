@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
-import { THEMES, DAYS, applyTheme, esc, hexToRgba } from '../lib/helpers'
-import { Camera, LogOut, Pencil, Trash2, Download, HelpCircle, Mail, Info, ExternalLink, SwitchCamera } from 'lucide-react'
+import { THEMES, DAYS, applyTheme, applyMode, loadMode, esc, hexToRgba } from '../lib/helpers'
+import { Camera, LogOut, Pencil, Trash2, Download, HelpCircle, Mail, Info, ExternalLink, SwitchCamera, Sun, Moon, X } from 'lucide-react'
 import TimePicker from '../components/TimePicker'
+import CatIcon from '../components/CatIcon'
 
 export default function Settings({ profile, onUpdate }) {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ export default function Settings({ profile, onUpdate }) {
   const [team, setTeam] = useState(settings?.team || '')
   const [notif, setNotif] = useState(settings?.notif || false)
   const [workingDays, setWorkingDays] = useState(settings?.workingDays || [1, 2, 3, 4, 5, 6])
+  const [uiMode, setUiMode] = useState(loadMode())
   const [selectedTheme, setSelectedTheme] = useState(
     THEMES.findIndex(t => t.ac === (settings?.theme?.ac || '#00d4aa'))
   )
@@ -55,6 +57,13 @@ export default function Settings({ profile, onUpdate }) {
   function previewTheme(idx) {
     setSelectedTheme(idx)
     applyTheme(THEMES[idx])
+    markDirty()
+  }
+
+  function toggleMode() {
+    const next = uiMode === 'dark' ? 'light' : 'dark'
+    setUiMode(next)
+    applyMode(next)
     markDirty()
   }
 
@@ -102,8 +111,7 @@ export default function Settings({ profile, onUpdate }) {
 
   return (
     <div style={{ maxWidth: 500, margin: '0 auto' }}>
-      {/* ===== Profile ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Profile</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Profile</h2>
       <div className="card m4">
         <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -113,7 +121,7 @@ export default function Settings({ profile, onUpdate }) {
                 style={{ cursor: 'pointer' }}
                 onClick={() => document.getElementById('pic_input')?.click()}
               >
-                {profile?.photo_url ? <img src={profile.photo_url} alt="" /> : init}
+                {profile?.photo_url ? <img src={profile.photo_url} alt={`${profile.name}'s profile photo`} /> : init}
               </div>
               <div className="pic-badge" onClick={() => document.getElementById('pic_input')?.click()}>
                 <Camera size={12} color="#000" />
@@ -157,8 +165,7 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* ===== Appearance ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Appearance</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Appearance</h2>
 
       <div className="card m4">
         <div className="ch"><div className="ct">Theme Color</div></div>
@@ -176,6 +183,19 @@ export default function Settings({ profile, onUpdate }) {
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--tx2)', marginTop: 8 }}>
             {THEMES[Math.max(0, selectedTheme)]?.name}
+          </div>
+        </div>
+      </div>
+
+      <div className="card m4">
+        <div className="ch"><div className="ct">Display Mode</div></div>
+        <div style={{ padding: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {uiMode === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{uiMode === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+            </div>
+            <button className={`tog${uiMode === 'light' ? ' on' : ''}`} onClick={toggleMode} aria-label={`Switch to ${uiMode === 'dark' ? 'light' : 'dark'} mode`} />
           </div>
         </div>
       </div>
@@ -200,7 +220,7 @@ export default function Settings({ profile, onUpdate }) {
                   next[i] = { ...next[i], start: v }
                   setBreakSlots(next); markDirty()
                 }} style={{ flex: 1 }} />
-                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>→</span>
+                <span style={{ color: 'var(--tx3)', fontSize: 11 }}>&rarr;</span>
                 <TimePicker value={bs.end} onChange={v => {
                   const next = [...breakSlots]
                   next[i] = { ...next[i], end: v }
@@ -208,7 +228,7 @@ export default function Settings({ profile, onUpdate }) {
                 }} style={{ flex: 1 }} />
                 <button className="ib del" onClick={() => {
                   setBreakSlots(breakSlots.filter((_, j) => j !== i)); markDirty()
-                }} style={{ flexShrink: 0 }}>✕</button>
+                }} style={{ flexShrink: 0 }} aria-label="Remove break slot"><X size={12} /></button>
               </div>
             ))}
             <button className="btn bs bsm" onClick={() => {
@@ -218,7 +238,6 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* Team */}
       <div className="card m4">
         <div className="ch"><div className="ct">Team</div></div>
         <div style={{ padding: 18 }}>
@@ -231,8 +250,7 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* ===== Working Schedule ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Working Schedule</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Working Schedule</h2>
       <div className="card m4">
         <div className="ch"><div className="ct">Working Days</div></div>
         <div style={{ padding: 18 }}>
@@ -256,20 +274,19 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* ===== Account ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Account</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Account</h2>
 
       <div className="card m4">
         <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
           <div className="cat-row" style={{ cursor: 'pointer' }} onClick={() => { if (window.__openAccSwitcher) window.__openAccSwitcher() }}>
-            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
               <SwitchCamera size={14} />
             </div>
             <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Switch User</div>
             <ExternalLink size={12} color="var(--tx3)" />
           </div>
           <div className="cat-row" style={{ cursor: 'pointer' }} onClick={doLogout}>
-            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)' }}>
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)' }}>
               <LogOut size={14} />
             </div>
             <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--red)' }}>Sign Out</div>
@@ -277,13 +294,12 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* ===== Application ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Application</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Application</h2>
 
       <div className="card m4">
         <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
           <div className="cat-row" style={{ cursor: 'pointer' }} onClick={() => { if (window.__openExport) window.__openExport() }}>
-            <div style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
+            <div style={{ width: 12, height: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)' }}>
               <Download size={14} />
             </div>
             <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>Export Data</div>
@@ -300,13 +316,12 @@ export default function Settings({ profile, onUpdate }) {
                 if (typeof Notification === 'undefined') return
                 if (Notification.permission === 'default') Notification.requestPermission()
                 else if (Notification.permission === 'denied') toast('Notifications blocked. Enable in browser settings.', 'er')
-              }} />
+              }} aria-label={`Notifications ${notif ? 'on' : 'off'}`} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Categories */}
       <div className="card m4">
         <div className="ch">
           <div className="ct">Categories</div>
@@ -322,14 +337,14 @@ export default function Settings({ profile, onUpdate }) {
                 <div className="cat-swatch" style={{ background: c.color }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>
-                    {c.icon} {esc(c.name)}
+                    <CatIcon icon={c.icon} size={12} /> {esc(c.name)}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--tx3)' }}>
                     {isDef ? 'Default' : 'Custom'}
                   </div>
                 </div>
                 <span className="tag" style={{ background: tagBg, color: c.color, border: `1px solid ${tagBd}` }}>
-                  {c.icon} {c.name}
+                  <CatIcon icon={c.icon} size={10} /> {c.name}
                 </span>
                 <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
                   <button className="ib" onClick={() => { if (window.__categoryModal) window.__categoryModal.open(c.id) }}>
@@ -354,12 +369,11 @@ export default function Settings({ profile, onUpdate }) {
       </div>
 
       <div className="infbox" style={{ marginBottom: 14 }}>
-        <span>💡</span>
+        <Info size={16} color="var(--ac)" style={{ flexShrink: 0, marginTop: 2 }} />
         <span>The <strong style={{ color: 'var(--tx)' }}>Break</strong> category is excluded from focus score calculations.</span>
       </div>
 
-      {/* ===== Support ===== */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Support</div>
+      <h2 style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10, marginTop: 24 }}>Support</h2>
 
       <div className="card m4">
         <div style={{ padding: '4px 18px', display: 'flex', flexDirection: 'column' }}>
@@ -387,10 +401,9 @@ export default function Settings({ profile, onUpdate }) {
         </div>
       </div>
 
-      {/* Save */}
       <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
         <button className="btn bp" style={{ flex: 1 }} onClick={saveSettings} disabled={!dirty || saving}>
-          {saving ? 'Saving…' : dirty ? 'Save Changes' : '✓ Saved'}
+          {saving ? 'Saving…' : dirty ? 'Save Changes' : 'Saved'}
         </button>
       </div>
     </div>

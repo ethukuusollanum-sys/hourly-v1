@@ -1,8 +1,8 @@
 export const DEFAULT_CATEGORIES = [
-  { id: 'Work', name: 'Work', icon: '💼', color: '#3b82f6' },
-  { id: 'Break', name: 'Break', icon: '☕', color: '#f97316' },
-  { id: 'Meeting', name: 'Meeting', icon: '🎥', color: '#a855f7' },
-  { id: 'Learning', name: 'Learning', icon: '📚', color: '#00d4aa' },
+  { id: 'Work', name: 'Work', icon: 'briefcase', color: '#3b82f6' },
+  { id: 'Break', name: 'Break', icon: 'coffee', color: '#f97316' },
+  { id: 'Meeting', name: 'Meeting', icon: 'video', color: '#a855f7' },
+  { id: 'Learning', name: 'Learning', icon: 'book', color: '#00d4aa' },
 ]
 
 export const THEMES = [
@@ -47,7 +47,6 @@ export function getSlots(start, end) {
   return slots
 }
 
-// "13:30" -> 810 (minutes since midnight). Returns 0 for invalid input.
 export function timeToMin(t) {
   if (!t || !t.includes(':')) return 0
   const [h, m] = t.split(':').map(n => parseInt(n, 10))
@@ -55,9 +54,6 @@ export function timeToMin(t) {
   return h * 60 + m
 }
 
-// Given break slots array [{start, end}, ...] and the workday slot list, return
-// the hourly slots that overlap each break, with overlap duration in minutes.
-// Empty/invalid breakSlots -> [].
 export function getBreakSlots(settings, allSlots) {
   const slots = settings?.breakSlots
   if (!slots || !Array.isArray(slots) || !slots.length) return []
@@ -124,6 +120,20 @@ export function applyTheme(t) {
   localStorage.setItem('ht_theme', JSON.stringify(t))
 }
 
+export function applyMode(mode) {
+  document.documentElement.setAttribute('data-theme', mode)
+  localStorage.setItem('ht_mode', mode)
+}
+
+export function loadMode() {
+  const saved = localStorage.getItem('ht_mode')
+  if (saved === 'light' || saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', saved)
+    return saved
+  }
+  return 'dark'
+}
+
 export const ROW_COLORS = [
   'FFF3F4F6', 'FFE8EAF0', 'FFDDDEE8', 'FFD5D7E3', 'FFD0D3E2', 'FFD4D6E8',
   'FFDBD9EE', 'FFE4DCF0', 'FFEEE0F0', 'FFF5E3ED', 'FFF8E5E8', 'FFFBE8E0',
@@ -149,15 +159,11 @@ export function getSlotDuration(slot) {
   return timeToMin(end) - timeToMin(start)
 }
 
-// Returns segments within a slot: break periods, work periods, and available gaps.
-// breakConfigs: [{ start: "HH:MM", end: "HH:MM" }] from settings.breakSlots
-// logs: work/break activities in this slot (with optional work_start)
 export function getSlotSegments(slot, breakConfigs, logs) {
   const { start: slotStart, end: slotEnd } = parseSlot(slot)
   const sMin = timeToMin(slotStart)
   const eMin = timeToMin(slotEnd)
 
-  // Collect break windows (from config) that overlap this slot
   const breakWindows = []
   for (const bc of breakConfigs || []) {
     const bStart = timeToMin(bc.start)
@@ -169,7 +175,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
     }
   }
 
-  // Merge overlapping break windows
   breakWindows.sort((a, b) => a.start - b.start)
   const mergedBreaks = []
   for (const bw of breakWindows) {
@@ -180,7 +185,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
     }
   }
 
-  // Build occupied timeline (breaks + existing work)
   const occupied = mergedBreaks.map(b => ({ ...b, type: 'break' }))
 
   const logsWithStart = []
@@ -204,7 +208,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
   }
   occupied.sort((a, b) => a.start - b.start)
 
-  // Merge overlapping intervals (same-type only)
   const merged = []
   for (const o of occupied) {
     if (merged.length && o.type === merged[merged.length - 1].type && o.start <= merged[merged.length - 1].end) {
@@ -216,7 +219,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
     }
   }
 
-  // Place logs without work_start into first available gaps (by created_at order)
   if (logsWithoutStart.length) {
     logsWithoutStart.sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
     for (const log of logsWithoutStart) {
@@ -237,7 +239,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
     }
   }
 
-  // Compute available gaps
   const available = []
   let cursor = sMin
   for (const seg of merged) {
@@ -253,8 +254,6 @@ export function getSlotSegments(slot, breakConfigs, logs) {
   return { breaks: mergedBreaks, occupied: merged, available }
 }
 
-// Check if a proposed work window overlaps any break window.
-// workStart, workEnd in minutes since midnight.
 export function hasOverlapWithBreaks(workStartMin, workEndMin, breakConfigs, slot) {
   const { start: slotStart, end: slotEnd } = parseSlot(slot)
   const sMin = timeToMin(slotStart)
@@ -269,15 +268,12 @@ export function hasOverlapWithBreaks(workStartMin, workEndMin, breakConfigs, slo
   return false
 }
 
-// Get the next available work start time within a slot.
-// Returns "HH:MM" string or null if no time available.
 export function getSuggestedWorkStart(slot, breakConfigs, logs, minDuration = 1) {
   const { start: slotStart } = parseSlot(slot)
   const segments = getSlotSegments(slot, breakConfigs, logs)
   const sMin = timeToMin(slotStart)
   const available = segments.available
   if (!available.length) return null
-  // Return the start of the first available gap that can fit minDuration
   for (const gap of available) {
     if (gap.end - gap.start >= minDuration) {
       const h = Math.floor(gap.start / 60)

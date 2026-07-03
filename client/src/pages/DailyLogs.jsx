@@ -4,6 +4,7 @@ import { DAYS, MONTHS, formatDate, H, M, hexToRgba, esc, sortByCreatedAsc } from
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { supabase } from '../config/supabase'
 import { useToast } from '../context/ToastContext'
+import CatIcon from '../components/CatIcon'
 
 export default function DailyLogs({ profile }) {
   const { activities, setActivities } = useActivities()
@@ -23,7 +24,7 @@ export default function DailyLogs({ profile }) {
   const datesWithLogs = useMemo(() => new Set(activities.map(a => a.date)), [activities])
 
   function getCat(id) {
-    return categories.find(c => c.id === id) || { id, name: id, icon: '📌', color: '#3b82f6' }
+    return categories.find(c => c.id === id) || { id, name: id, icon: 'star', color: '#3b82f6' }
   }
 
   function calNav(dir) {
@@ -42,11 +43,9 @@ export default function DailyLogs({ profile }) {
 
   function renderCalendar() {
     const cells = []
-    // Prev month fill
     for (let i = 0; i < firstDay; i++) {
       cells.push(<div key={`prev-${i}`} className="cal-day other-month">{daysInPrev - firstDay + 1 + i}</div>)
     }
-    // Current month
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const isTod = dateStr === today
@@ -57,10 +56,10 @@ export default function DailyLogs({ profile }) {
           key={d}
           className={`cal-day${isTod ? ' today' : ''}${isSel ? ' sel' : ''}${hasLog ? ' has-log' : ''}`}
           onClick={() => setSelectedDate(dateStr)}
+          aria-label={`${dateStr}${hasLog ? ', has activities' : ''}`}
         >{d}</div>
       )
     }
-    // Next month fill
     const remaining = (7 - ((firstDay + daysInMonth) % 7)) % 7
     for (let i = 1; i <= remaining; i++) {
       cells.push(<div key={`next-${i}`} className="cal-day other-month">{i}</div>)
@@ -103,16 +102,16 @@ export default function DailyLogs({ profile }) {
         <div className="ch">
           <div className="ct">Calendar</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button className="ib" onClick={() => calNav(-1)}><ChevronLeft size={14} /></button>
+            <button className="ib" onClick={() => calNav(-1)} aria-label="Previous month"><ChevronLeft size={14} /></button>
             <span style={{ fontSize: 13, fontWeight: 600, minWidth: 120, textAlign: 'center' }}>
               {MONTHS[calMonth]} {calYear}
             </span>
-            <button className="ib" onClick={() => calNav(1)}><ChevronRight size={14} /></button>
+            <button className="ib" onClick={() => calNav(1)} aria-label="Next month"><ChevronRight size={14} /></button>
           </div>
         </div>
         <div style={{ padding: '14px 16px' }}>
           <div className="cal-grid">
-            {DAYS.map(d => <div key={d} className="cal-hdr">{d.slice(0, 1)}</div>)}
+            {DAYS.map(d => <div key={d} className="cal-hdr" aria-label={d}>{d.slice(0, 1)}</div>)}
             {renderCalendar()}
           </div>
         </div>
@@ -120,7 +119,7 @@ export default function DailyLogs({ profile }) {
 
       <div className="sh2" style={{ marginBottom: 14, justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button className="btn bs bsm" onClick={() => navDay(-1)}>
+          <button className="btn bs bsm" onClick={() => navDay(-1)} aria-label="Previous day">
             <ChevronLeft size={13} /> Prev
           </button>
           <div style={{ textAlign: 'center', minWidth: 200 }}>
@@ -132,7 +131,7 @@ export default function DailyLogs({ profile }) {
               {dayActs.length} tasks · {H(dayTm)}h {M(dayTm)}m · {dayTm > 0 ? Math.round((dayWm / dayTm) * 100) : 0}% focus
             </div>
           </div>
-          <button className="btn bs bsm" onClick={() => navDay(1)} disabled={selectedDate >= tomorrowStr}>
+          <button className="btn bs bsm" onClick={() => navDay(1)} disabled={selectedDate >= tomorrowStr} aria-label="Next day">
             Next <ChevronRight size={13} />
           </button>
         </div>
@@ -168,12 +167,12 @@ export default function DailyLogs({ profile }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
                     <span className="tag" style={{ background: tagBg, color: col, border: `1px solid ${tagBd}` }}>
-                      {cat.icon} {a.category}
+                      <CatIcon icon={cat.icon} size={10} /> {a.category}
                     </span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--mo)', color: 'var(--tx3)' }}>
                       {a.duration || 60}m
                     </span>
-                    <button className="ib del" onClick={() => delActivity(a.id, a.name)} style={{ opacity: 0.7 }}>
+                    <button className="ib del" onClick={() => delActivity(a.id, a.name)} style={{ opacity: 0.7 }} aria-label={`Delete ${a.name}`}>
                       <Trash2 size={12} />
                     </button>
                   </div>

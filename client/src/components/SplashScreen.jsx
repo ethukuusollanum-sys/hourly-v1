@@ -40,7 +40,7 @@ export default function SplashScreen({ onFinish }) {
         <svg viewBox="0 0 120 120" style={{
           position: 'absolute', top: -20, left: -20, width: 120, height: 120,
           pointerEvents: 'none',
-        }}>
+        }} aria-hidden="true">
           <g ref={ringRef}>
             {Array.from({length: 12}).map((_, i) => {
               const a = i * 30
@@ -58,7 +58,7 @@ export default function SplashScreen({ onFinish }) {
           </g>
         </svg>
 
-        <img src="/icons/icon-512.png" alt="Hourly" width="80" height="80"
+        <img src="/icons/icon-512.png" alt="Hourly Tracker logo" width="80" height="80"
           style={{ display: 'block', borderRadius: 16, position: 'relative', zIndex: 1 }} />
       </div>
       <div style={{

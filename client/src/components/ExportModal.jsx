@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { formatDate, getSlots, H, M, ROW_COLORS, sortByCreatedAsc, getToday } from '../lib/helpers'
-import { X, Download } from 'lucide-react'
+import { X, Download, Calendar } from 'lucide-react'
+import CatIcon from './CatIcon'
 
 export default function ExportModal({ profile }) {
   const { activities } = useActivities()
@@ -158,7 +159,7 @@ export default function ExportModal({ profile }) {
         for (const date of dates) {
           const dayActs = filtered.filter(a => a.date === date)
           const hdRow = ws.getRow(rn++)
-          hdRow.getCell(1).value = `📅 ${formatDate(date)}`
+          hdRow.getCell(1).value = formatDate(date)
           hdRow.getCell(1).font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FF1E3A8A' } }
           for (let i = 1; i <= cols.length; i++) {
             const c = hdRow.getCell(i)
@@ -200,7 +201,7 @@ export default function ExportModal({ profile }) {
       const sw = wb.addWorksheet('Summary')
       sw.columns = [{ header: 'Metric', key: 'k', width: 26 }, { header: 'Value', key: 'v', width: 24 }]
       stHdr(sw, [{ header: 'Metric' }, { header: 'Value' }])
-      const rows2 = [['Period', `${from} → ${to}`], ['Generated', new Date().toLocaleString()], ['Total Activities', filtered.length], ['Total Duration', `${H(totalMin)}h ${M(totalMin)}m`], ['', ''], ['Category', 'Duration']]
+      const rows2 = [['Period', `${from} \u2192 ${to}`], ['Generated', new Date().toLocaleString()], ['Total Activities', filtered.length], ['Total Duration', `${H(totalMin)}h ${M(totalMin)}m`], ['', ''], ['Category', 'Duration']]
       const catMap = {}
       filtered.forEach(a => { catMap[a.category] = (catMap[a.category] || 0) + (parseInt(a.duration) || 60) })
       Object.entries(catMap).sort((a, b) => b[1] - a[1]).forEach(([cat, min]) => rows2.push([cat, `${H(min)}h ${M(min)}m`]))
@@ -219,7 +220,7 @@ export default function ExportModal({ profile }) {
       a.download = `HourlyTracker_${from}_to_${to}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
-      toast('Exported! 📥', 'ok')
+      toast('Exported!', 'ok')
       setOpen(false)
     } catch (err) {
       toast('Export failed', 'er')
@@ -228,7 +229,6 @@ export default function ExportModal({ profile }) {
     setLoading(false)
   }
 
-  // Expose open to sidebar button
   if (typeof window !== 'undefined') {
     window.__openExport = openModal
   }
@@ -243,7 +243,7 @@ export default function ExportModal({ profile }) {
             <div className="mt2">Export Report</div>
             <div className="ms">Choose what to include</div>
           </div>
-          <button className="ib" onClick={() => setOpen(false)} style={{ width: 28, height: 28 }}>
+          <button className="ib" onClick={() => setOpen(false)} style={{ width: 28, height: 28 }} aria-label="Close">
             <X size={15} />
           </button>
         </div>
@@ -265,8 +265,8 @@ export default function ExportModal({ profile }) {
                 <div className="fd"><label>To Date</label><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></div>
               </div>
             )}
-            <div style={{ fontSize: 12, color: 'var(--ac)', marginTop: 8, fontFamily: 'var(--mo)' }}>
-              {from === to ? `📅 ${formatDate(from)}` : `📅 ${formatDate(from)} → ${formatDate(to)}`}
+            <div style={{ fontSize: 12, color: 'var(--ac)', marginTop: 8, fontFamily: 'var(--mo)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Calendar size={12} /> {from === to ? formatDate(from) : `${formatDate(from)} \u2192 ${formatDate(to)}`}
             </div>
           </div>
           <div className="exp-section">
@@ -277,7 +277,7 @@ export default function ExportModal({ profile }) {
                   key={c.id}
                   className={`chip${catFilter.has(c.id) ? ' on' : ''}`}
                   onClick={() => toggleCat(c.id)}
-                >{c.icon} {c.name}</button>
+                ><CatIcon icon={c.icon} size={11} /> {c.name}</button>
               ))}
             </div>
           </div>

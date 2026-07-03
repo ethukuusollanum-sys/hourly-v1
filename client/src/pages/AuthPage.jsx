@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../config/supabase'
 import { useToast } from '../context/ToastContext'
-import { Timer, Mail, Lock, User, Clock, Users, Sparkles, Download, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Timer, Mail, Lock, User, Clock, Users, Sparkles, Download, Eye, EyeOff, ArrowLeft, Info, Send } from 'lucide-react'
 
 export default function AuthPage() {
   const { toast } = useToast()
@@ -116,7 +116,7 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Email Address</label>
                   <div className="iw hic">
-                    <span className="iic"><Mail size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><Mail size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type="email" placeholder="you@company.com" autoComplete="email"
                       value={email} onChange={e => setEmail(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') doLogin() }} />
@@ -125,16 +125,16 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Password</label>
                   <div className="iw hic hicr">
-                    <span className="iic"><Lock size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><Lock size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type={showPw ? 'text' : 'password'} placeholder="••••••••" autoComplete="current-password"
                       value={password} onChange={e => setPassword(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') doLogin() }} />
-                    <span className="iic-r" onClick={() => setShowPw(!showPw)}>
+                    <span className="iic-r" onClick={() => setShowPw(!showPw)} aria-label={showPw ? 'Hide password' : 'Show password'}>
                       {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </span>
                   </div>
                 </div>
-                {error && <div className="errmsg m3">{error}</div>}
+                {error && <div className="errmsg m3" role="alert">{error}</div>}
                 <button className="btn bp bfw" onClick={doLogin} disabled={loading}>
                   {loading ? 'Signing in…' : 'Sign In'}
                 </button>
@@ -161,7 +161,7 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Full Name</label>
                   <div className="iw hic">
-                    <span className="iic"><User size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><User size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type="text" placeholder="Jane Doe" autoComplete="name"
                       value={name} onChange={e => setName(e.target.value)} />
                   </div>
@@ -169,7 +169,7 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Email Address</label>
                   <div className="iw hic">
-                    <span className="iic"><Mail size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><Mail size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type="email" placeholder="you@company.com"
                       value={email} onChange={e => setEmail(e.target.value)} />
                   </div>
@@ -177,15 +177,15 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Password</label>
                   <div className="iw hic hicr">
-                    <span className="iic"><Lock size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><Lock size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type={showPw ? 'text' : 'password'} placeholder="Min 6 characters" minLength={6}
                       value={password} onChange={e => setPassword(e.target.value)} />
-                    <span className="iic-r" onClick={() => setShowPw(!showPw)}>
+                    <span className="iic-r" onClick={() => setShowPw(!showPw)} aria-label={showPw ? 'Hide password' : 'Show password'}>
                       {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </span>
                   </div>
                 </div>
-                {error && <div className="errmsg m3">{error}</div>}
+                {error && <div className="errmsg m3" role="alert">{error}</div>}
                 <button className="btn bp bfw" onClick={doSignup} disabled={loading}>
                   {loading ? 'Creating…' : 'Create Account'}
                 </button>
@@ -201,16 +201,22 @@ export default function AuthPage() {
             {/* VERIFY */}
             {panel === 'verify' && (
               <div id="panel-verify" style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📬</div>
+                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--acbg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mail size={24} color="var(--ac)" />
+                  </div>
+                </div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Verification email sent!</h2>
                 <p style={{ fontSize: '12.5px', color: 'var(--tx2)', marginTop: 6, lineHeight: 1.6 }}>
                   We sent a link to <strong>{vfyEmail}</strong>.<br />
                   Click the link, then sign in below.
                 </p>
                 <div className="infbox" style={{ marginTop: 16, marginBottom: 16, textAlign: 'left' }}>
-                  <span>💡</span><span>Check your spam folder if not received.</span>
+                  <Info size={16} color="var(--ac)" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>Check your spam folder if not received.</span>
                 </div>
                 <button className="btn bp bfw" onClick={resendVerification} disabled={loading || resendTimer > 0} style={{ marginBottom: 8 }}>
+                  <Send size={13} />
                   {loading ? 'Sending…' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Email'}
                 </button>
                 <div style={{ marginTop: 12 }}>
@@ -232,20 +238,20 @@ export default function AuthPage() {
                 <div className="fd m3">
                   <label>Email Address</label>
                   <div className="iw hic">
-                    <span className="iic"><Mail size={15} color="var(--tx3)" /></span>
+                    <span className="iic"><Mail size={15} color="var(--tx3)" aria-hidden="true" /></span>
                     <input type="email" placeholder="you@company.com"
                       value={email} onChange={e => setEmail(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') sendPasswordReset() }} />
                   </div>
                 </div>
-                {error && <div className="errmsg m3">{error}</div>}
+                {error && <div className="errmsg m3" role="alert">{error}</div>}
                 <button className="btn bp bfw" onClick={sendPasswordReset} disabled={loading}>
                   {loading ? 'Sending…' : 'Send Reset Link'}
                 </button>
                 <div style={{ textAlign: 'center', marginTop: 14 }}>
                   <button onClick={() => { setPanel('login'); setError('') }}
                     style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: '12.5px', cursor: 'pointer', fontFamily: 'var(--fn)' }}>
-                    ← Back to sign in
+                    <ArrowLeft size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} /> Back to sign in
                   </button>
                 </div>
               </div>
@@ -254,18 +260,23 @@ export default function AuthPage() {
             {/* FORGOT DONE */}
             {panel === 'forgot-done' && (
               <div id="fp-step2" style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>🔐</div>
+                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--acbg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Lock size={24} color="var(--ac)" />
+                  </div>
+                </div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Check your inbox</h2>
                 <p style={{ fontSize: '12.5px', color: 'var(--tx2)', marginTop: 6, lineHeight: 1.6 }}>
                   A password reset link has been sent.
                 </p>
                 <div className="infbox" style={{ marginTop: 16, textAlign: 'left' }}>
-                  <span>💡</span><span>Check spam folder if not received.</span>
+                  <Info size={16} color="var(--ac)" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>Check spam folder if not received.</span>
                 </div>
                 <div style={{ marginTop: 14 }}>
                   <button onClick={() => { setPanel('login'); setError('') }}
                     style={{ background: 'none', border: 'none', color: 'var(--tx2)', fontSize: '12.5px', cursor: 'pointer', fontFamily: 'var(--fn)' }}>
-                    ← Back to sign in
+                    <ArrowLeft size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} /> Back to sign in
                   </button>
                 </div>
               </div>
