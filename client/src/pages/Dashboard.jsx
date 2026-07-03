@@ -110,7 +110,7 @@ export default function Dashboard({ profile }) {
           {slots.map(slot => {
             const sa = ta.filter(a => a.slot === slot)
               .sort(sortByCreatedAsc)
-            const isn = slot.split(':')[0] === nh
+            const isn = parseSlot(slot).start.split(':')[0] === nh
             const isBreak = breakSlots.has(slot)
             const tasks = sa.filter(a => !a.is_break)
             const slotLimit = getSlotDuration(slot)
@@ -168,7 +168,7 @@ export default function Dashboard({ profile }) {
                     }
 
                     return (
-                      <div style={{ display: 'flex', height: 18, borderRadius: 6, overflow: 'hidden', marginBottom: 6, gap: 1 }}>
+                      <div style={{ display: 'flex', height: 18, borderRadius: 6, overflow: 'hidden', marginBottom: 3, gap: 1 }}>
                         {allSegs.map((seg, i) => {
                           const pct = ((seg.end - seg.start) / total) * 100
                           if (seg.type === 'available') {
@@ -232,9 +232,7 @@ export default function Dashboard({ profile }) {
                         </div>
                       </div>
                     )
-                  }) : !isBreak && <div className="emp">
-                    <CircleAlert size={12} /> {availMins > 0 ? `${availMins}m available — tap +Log to start` : 'No available time'}
-                  </div>}
+                  }) : !isBreak && null}
                 </div>
                 <div className="tla">
                   <button className={`btn ${availMins <= 0 ? 'bg2' : 'bs'} bxs`}

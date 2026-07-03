@@ -20,12 +20,30 @@ export const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 export function getSlots(start, end) {
+  const startMin = timeToMin(start)
+  const endMin = timeToMin(end)
+  if (endMin <= startMin) return []
+
   const slots = []
-  const sh = parseInt(start.split(':')[0])
-  const eh = parseInt(end.split(':')[0])
-  for (let i = sh; i < eh; i++) {
-    slots.push(`${String(i).padStart(2, '0')}:00 - ${String(i + 1).padStart(2, '0')}:00`)
+
+  const nextHour = Math.ceil(startMin / 60) * 60
+  const firstEnd = Math.min(nextHour, endMin)
+
+  if (firstEnd > startMin) {
+    slots.push(`${start} - ${minToString(firstEnd)}`)
   }
+
+  let current = firstEnd
+  while (current + 60 <= endMin) {
+    const next = current + 60
+    slots.push(`${minToString(current)} - ${minToString(next)}`)
+    current = next
+  }
+
+  if (current < endMin) {
+    slots.push(`${minToString(current)} - ${end}`)
+  }
+
   return slots
 }
 
