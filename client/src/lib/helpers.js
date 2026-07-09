@@ -204,7 +204,8 @@ export function getSlotSegments(slot, breakConfigs, logs) {
   for (const log of logsWithStart) {
     const wStart = timeToMin(log.work_start)
     const dur = parseInt(log.duration) || 0
-    occupied.push({ start: wStart, end: wStart + dur, type: 'work', activity: log })
+    const segType = log.category === 'Break' ? 'break' : 'work'
+    occupied.push({ start: wStart, end: wStart + dur, type: segType, activity: log })
   }
   occupied.sort((a, b) => a.start - b.start)
 
@@ -223,18 +224,19 @@ export function getSlotSegments(slot, breakConfigs, logs) {
     logsWithoutStart.sort((a, b) => (a.created_at || '') < (b.created_at || '') ? -1 : 1)
     for (const log of logsWithoutStart) {
       const dur = parseInt(log.duration) || 0
+      const segType = log.category === 'Break' ? 'break' : 'work'
       let cursor = sMin
       let placed = false
       for (let i = 0; i < merged.length; i++) {
         if (merged[i].start > cursor && cursor + dur <= merged[i].start) {
-          merged.splice(i, 0, { start: cursor, end: cursor + dur, type: 'work', activity: log })
+          merged.splice(i, 0, { start: cursor, end: cursor + dur, type: segType, activity: log })
           placed = true
           break
         }
         cursor = Math.max(cursor, merged[i].end)
       }
       if (!placed && cursor + dur <= eMin) {
-        merged.push({ start: cursor, end: cursor + dur, type: 'work', activity: log })
+        merged.push({ start: cursor, end: cursor + dur, type: segType, activity: log })
       }
     }
   }

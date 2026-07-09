@@ -2,14 +2,14 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
 export default function ConfirmModal() {
-  const [state, setState] = useState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger' })
+  const [state, setState] = useState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger', cancelLabel: 'Cancel' })
   const resolveRef = useRef(null)
   const confirmBtnRef = useRef(null)
 
-  const confirm = useCallback((message, title = 'Confirm', confirmLabel = 'Delete', type = 'danger') => {
+  const confirm = useCallback((message, title = 'Confirm', confirmLabel = 'Delete', type = 'danger', cancelLabel = 'Cancel') => {
     return new Promise((resolve) => {
       resolveRef.current = resolve
-      setState({ isOpen: true, message, title, confirmLabel, type })
+      setState({ isOpen: true, message, title, confirmLabel, type, cancelLabel })
     })
   }, [])
 
@@ -36,12 +36,12 @@ export default function ConfirmModal() {
 
   function handleConfirm() {
     resolveRef.current?.(true)
-    setState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger' })
+    setState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger', cancelLabel: 'Cancel' })
   }
 
   function handleCancel() {
     resolveRef.current?.(false)
-    setState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger' })
+    setState({ isOpen: false, message: '', title: 'Confirm', confirmLabel: 'Delete', type: 'danger', cancelLabel: 'Cancel' })
   }
 
   if (!state.isOpen) return null
@@ -62,7 +62,7 @@ export default function ConfirmModal() {
           <p style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.6 }}>{state.message}</p>
         </div>
         <div className="mf" style={{ gap: 8 }}>
-          <button className="btn bs bsm" onClick={handleCancel}>Cancel</button>
+          <button className="btn bs bsm" onClick={handleCancel}>{state.cancelLabel}</button>
           <button className={`btn ${state.type === 'danger' ? 'bdr' : 'bp'} bsm`} ref={confirmBtnRef} onClick={handleConfirm}>{state.confirmLabel}</button>
         </div>
       </div>

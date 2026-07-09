@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../config/supabase'
@@ -22,6 +22,10 @@ export default function ActivityModal({ profile }) {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [blurErrors, setBlurErrors] = useState({})
+  const [isDirty, setIsDirty] = useState(false)
+  const isDirtyRef = useRef(false)
+  const confirmingRef = useRef(false)
+  const modalRef = useRef(null)
 
   const categories = profile?.categories || []
   const breakConfigs = profile?.settings?.breakSlots || []
@@ -133,6 +137,7 @@ export default function ActivityModal({ profile }) {
       setSlotDate(today)
     }
     setBlurErrors({})
+    setIsDirty(false)
     setOpen(true)
   }
 
@@ -141,6 +146,27 @@ export default function ActivityModal({ profile }) {
     setEditId(null)
     setSlot(null)
     setBlurErrors({})
+  }
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+  })
+
+  async function handleClose() {
+    if (confirmingRef.current) return
+    if (isDirtyRef.current) {
+      confirmingRef.current = true
+      const confirmed = await window.__confirm(
+        'You have unsaved changes. Are you sure you want to close this form?',
+        'Discard Changes?',
+        'Discard Changes',
+        'danger',
+        'Continue Editing'
+      )
+      confirmingRef.current = false
+      if (!confirmed) return
+    }
+    closeModal()
   }
 
   async function save() {
@@ -204,17 +230,48 @@ export default function ActivityModal({ profile }) {
     return () => { delete window.__activityModal }
   }, [categories, activities])
 
+  useEffect(() => {
+    if (!open) { document.body.style.overflow = ''; return }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function handleKey(e) {
+      if (e.key === 'Escape' && !confirmingRef.current) {
+        if (isDirtyRef.current) {
+          confirmingRef.current = true
+          window.__confirm(
+            'You have unsaved changes. Are you sure you want to close this form?',
+            'Discard Changes?',
+            'Discard Changes',
+            'danger',
+            'Continue Editing'
+          ).then(confirmed => {
+            confirmingRef.current = false
+            if (confirmed) closeModal()
+          })
+        } else {
+          closeModal()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [open])
+
   if (!open) return null
 
   return (
-    <div className="ov" onClick={closeModal}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <div className="ov">
+      <div className="modal" ref={modalRef} tabIndex={-1} onClick={e => e.stopPropagation()}>
         <div className="mh">
           <div>
             <div className="mt2">{editId ? 'Edit Task' : 'Log Task'}</div>
             <div className="ms">{slot || '–'}</div>
           </div>
-          <button className="ib" onClick={closeModal} style={{ width: 28, height: 28 }} aria-label="Close">
+          <button className="ib" onClick={handleClose} style={{ width: 28, height: 28 }} aria-label="Close">
             <X size={15} />
           </button>
         </div>
@@ -232,7 +289,7 @@ export default function ActivityModal({ profile }) {
               placeholder="Code review, Bug fix, Client call…"
               maxLength={80}
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => { setName(e.target.value); setIsDirty(true) }}
               onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
               autoFocus
             />
@@ -245,7 +302,7 @@ export default function ActivityModal({ profile }) {
                   <button
                     key={cat.id}
                     className={`chip${category === cat.id ? ' on' : ''}`}
-                    onClick={() => setCategory(cat.id)}
+                    onClick={() => { setCategory(cat.id); setIsDirty(true) }}
                   >
                     <CatIcon icon={cat.icon} size={11} /> {cat.name}
                   </button>
@@ -259,7 +316,7 @@ export default function ActivityModal({ profile }) {
                   type="text"
                   placeholder="HH:MM"
                   value={workStart}
-                  onChange={e => setWorkStart(e.target.value)}
+                  onChange={e => { setWorkStart(e.target.value); setIsDirty(true) }}
                   onBlur={() => validateOnBlur('workStart')}
                   onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                   maxLength={5}
@@ -279,7 +336,7 @@ export default function ActivityModal({ profile }) {
                 type="text"
                 inputMode="numeric"
                 value={duration}
-                onChange={e => setDuration(e.target.value)}
+                onChange={e => { setDuration(e.target.value); setIsDirty(true) }}
                 onBlur={() => validateOnBlur('duration')}
                 onKeyDown={e => { if (e.key === 'Enter' && canSave) save() }}
                 maxLength={3}
@@ -325,14 +382,14 @@ export default function ActivityModal({ profile }) {
             <label>Notes <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
             <textarea
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={e => { setNotes(e.target.value); setIsDirty(true) }}
               onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && canSave) save() }}
               placeholder="Context, outcome, blockers…"
             />
           </div>
         </div>
         <div className="mf">
-          <button className="btn bg2 bsm" onClick={closeModal}>Cancel</button>
+          <button className="btn bg2 bsm" onClick={handleClose}>Cancel</button>
           <button className="btn bp bsm" onClick={save} disabled={saving || !canSave}>
             {saving ? 'Saving…' : 'Save Log'}
           </button>

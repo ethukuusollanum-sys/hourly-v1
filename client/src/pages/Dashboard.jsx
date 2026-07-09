@@ -113,9 +113,13 @@ export default function Dashboard({ profile }) {
             const isn = parseSlot(slot).start.split(':')[0] === nh
             const isBreak = breakSlots.has(slot)
             const tasks = sa.filter(a => !a.is_break)
+            const workTasks = tasks.filter(a => a.category !== 'Break')
+            const breakTasks = tasks.filter(a => a.category === 'Break')
             const slotLimit = getSlotDuration(slot)
             const breakMins = breakSlotMap.get(slot) || 0
-            const logMins = tasks.reduce((s, a) => s + (a.duration || 0), 0)
+            const workMins = workTasks.reduce((s, a) => s + (a.duration || 0), 0)
+            const userBreakMins = breakTasks.reduce((s, a) => s + (a.duration || 0), 0)
+            const logMins = workMins + userBreakMins
             const availMins = Math.max(0, slotLimit - breakMins - logMins)
             return (
               <div key={slot} className={`tlr${isBreak ? ' brk' : ''}`}>
@@ -130,8 +134,9 @@ export default function Dashboard({ profile }) {
                 <div className="tles">
                   <div className="slot-meta">
                     <span className="slot-meta-item" title="Slot duration"><Clock size={10} /> {slotLimit}m</span>
-                    {breakMins > 0 && <span className="slot-meta-item" title="Break time in this slot"><Coffee size={10} /> {breakMins}m</span>}
-                    {logMins > 0 && <span className="slot-meta-item" title="Logged time"><ListChecks size={10} /> {logMins}m</span>}
+                    {breakMins > 0 && <span className="slot-meta-item" title="Scheduled break"><Coffee size={10} /> {breakMins}m</span>}
+                    {workMins > 0 && <span className="slot-meta-item" title="Work time"><ListChecks size={10} /> {workMins}m</span>}
+                    {userBreakMins > 0 && <span className="slot-meta-item" title="Logged break" style={{ color: '#f97316' }}><Coffee size={10} /> {userBreakMins}m</span>}
                     <span className={`slot-avail${availMins <= 5 ? ' slot-avail-critical' : ''}`}
                       style={{
                         color: availMins <= 0 ? 'var(--red)' : availMins <= 15 ? '#e6a817' : 'var(--tx3)',
