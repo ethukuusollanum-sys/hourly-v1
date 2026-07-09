@@ -2,8 +2,8 @@ import { useActivities } from '../context/ActivitiesContext'
 import { useToast } from '../context/ToastContext'
 import { getSlots, getBreakSlots, getSlotDuration, getSlotSegments, getToday, H, M, hexToRgba, esc, sortByCreatedAsc, calculateRemainingTime, minToString, parseSlot, timeToMin } from '../lib/helpers'
 import { supabase } from '../config/supabase'
-import { Pencil, Trash2, Coffee, Clock, Calendar, CircleAlert, ListChecks, Timer } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Pencil, Trash2, Coffee, Clock, Calendar, CircleAlert, ListChecks, Timer, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import useBreakSync from '../hooks/useBreakSync'
 import CatIcon from '../components/CatIcon'
@@ -16,7 +16,37 @@ export default function Dashboard({ profile }) {
   const settings = profile?.settings || {}
   const categories = profile?.categories || []
 
-  const ta = activities.filter(a => a.date === today)
+  const [selectedDate, setSelectedDate] = useState(today)
+
+  const isToday = selectedDate === today
+  const isFuture = selectedDate > today
+
+  const dateLabel = useMemo(() => {
+    const d = new Date(selectedDate + 'T12:00:00')
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  }, [selectedDate])
+
+  function prevDay() {
+    setSelectedDate(prev => {
+      const d = new Date(prev + 'T12:00:00')
+      d.setDate(d.getDate() - 1)
+      return d.toISOString().split('T')[0]
+    })
+  }
+
+  function nextDay() {
+    setSelectedDate(prev => {
+      const d = new Date(prev + 'T12:00:00')
+      d.setDate(d.getDate() + 1)
+      return d.toISOString().split('T')[0]
+    })
+  }
+
+  function goToday() {
+    setSelectedDate(today)
+  }
+
+  const ta = activities.filter(a => a.date === selectedDate)
   const wm = ta.filter(a => {
     const cat = categories.find(c => c.id === a.category)
     return cat?.name !== 'Break'
@@ -103,9 +133,60 @@ export default function Dashboard({ profile }) {
 
       <div className="card">
         <div className="ch">
-          <div className="ct">Today's Timeline</div>
-          <div className="cs">{today} · {slots.length} hour slots</div>
+          <div className="ct">{isToday ? "Today's Timeline" : 'Timeline'}</div>
+          <div className="cs">{slots.length} hour slots</div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--bd)' }}>
+          <button className="ib" onClick={prevDay} aria-label="Previous day" style={{ width: 32, height: 32 }}>
+            <ChevronLeft size={16} />
+          </button>
+          <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => {
+            const picker = document.createElement('input')
+            picker.type = 'date'
+            picker.value = selectedDate
+            picker.max = today
+            picker.style.display = 'none'
+            document.body.appendChild(picker)
+            picker.addEventListener('change', () => {
+              if (picker.value) setSelectedDate(picker.value)
+              document.body.removeChild(picker)
+            })
+            picker.click()
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)', fontFamily: 'var(--mo)' }}>{selectedDate}</div>
+            <div style={{ fontSize: 10.5, color: isToday ? 'var(--ac)' : 'var(--tx3)', marginTop: 2 }}>
+              {isToday ? 'Today' : dateLabel}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {!isToday && (
+              <button className="ib" onClick={goToday} aria-label="Go to today" style={{ width: 32, height: 32, fontSize: 10, fontFamily: 'var(--mo)', color: 'var(--ac)' }}>
+                Today
+              </button>
+            )}
+            <button className="ib" onClick={nextDay} disabled={isToday || isFuture} aria-label="Next day" style={{ width: 32, height: 32, opacity: isToday || isFuture ? 0.3 : 1, cursor: isToday || isFuture ? 'default' : 'pointer' }}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+        {isFuture && (
+          <div style={{ padding: '12px 16px', background: 'rgba(244,63,94,.08)', borderBottom: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CircleAlert size={14} color="var(--red)" />
+            <span style={{ fontSize: 12, color: 'var(--red)' }}>Future date logs cannot be added.</span>
+          </div>
+        )}
+        {isToday && (
+          <div style={{ padding: '12px 16px', background: 'rgba(0,212,170,.06)', borderBottom: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={14} color="var(--ac)" />
+            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>Viewing today's timeline</span>
+          </div>
+        )}
+        {!isToday && !isFuture && (
+          <div style={{ padding: '12px 16px', background: 'rgba(59,130,246,.06)', borderBottom: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={14} color="var(--ac2)" />
+            <span style={{ fontSize: 12, color: 'var(--tx2)' }}>Viewing previous day — you can add logs for this date</span>
+          </div>
+        )}
         <div>
           {slots.map(slot => {
             const sa = ta.filter(a => a.slot === slot)
@@ -238,12 +319,12 @@ export default function Dashboard({ profile }) {
                   }) : !isBreak && null}
                 </div>
                 <div className="tla">
-                  <button className={`btn ${availMins <= 0 ? 'bg2' : 'bs'} bxs`}
-                    disabled={availMins <= 0}
+                  <button className={`btn ${availMins <= 0 || isFuture ? 'bg2' : 'bs'} bxs`}
+                    disabled={availMins <= 0 || isFuture}
                     onClick={() => {
-                      if (window.__activityModal) window.__activityModal.open(slot)
+                      if (window.__activityModal) window.__activityModal.open(slot, null, selectedDate)
                     }}>
-                    {availMins <= 0 ? 'Slot Full' : '+ Log'}
+                    {isFuture ? 'Future' : availMins <= 0 ? 'Slot Full' : '+ Log'}
                   </button>
                 </div>
               </div>

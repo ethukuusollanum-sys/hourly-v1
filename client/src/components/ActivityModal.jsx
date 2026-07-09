@@ -102,12 +102,13 @@ export default function ActivityModal({ profile }) {
     setBlurErrors(errs)
   }
 
-  function openModal(slotVal, editData = null) {
+  function openModal(slotVal, editData = null, selectedDate = null) {
     setSlot(slotVal)
     const limit = getSlotDuration(slotVal)
     const today = getToday()
+    const targetDate = editData?.date || selectedDate || today
     const existLogs = activities.filter(a =>
-      a.date === (editData?.date || today) && a.slot === slotVal && !a.is_break && a.id !== editData?.id
+      a.date === targetDate && a.slot === slotVal && !a.is_break && a.id !== editData?.id
     )
     if (editData) {
       setEditId(editData.id)
@@ -134,7 +135,7 @@ export default function ActivityModal({ profile }) {
       setWorkStart(suggested || parseSlot(slotVal).start)
       setDuration(String(Math.max(1, used)))
       setNotes('')
-      setSlotDate(today)
+      setSlotDate(targetDate)
     }
     setBlurErrors({})
     setIsDirty(false)
@@ -176,8 +177,9 @@ export default function ActivityModal({ profile }) {
     if (!workStart.trim()) { toast('Work start time is required', 'er'); return }
     if (overlapError) { toast(overlapError, 'er'); return }
     if (dur > remaining) { toast('Duration exceeds available time in this slot', 'er'); return }
+    if (!slotDate) { toast('Date is required', 'er'); return }
+    if (slotDate > getToday()) { toast('Future date logs cannot be added', 'er'); return }
     setSaving(true)
-    const today = getToday()
 
     try {
       if (editId) {
@@ -197,7 +199,7 @@ export default function ActivityModal({ profile }) {
               category,
               duration: dur,
               notes: notes.trim(),
-              date: today,
+              date: slotDate,
               slot,
               created_at: new Date().toISOString(),
             })
@@ -269,7 +271,7 @@ export default function ActivityModal({ profile }) {
         <div className="mh">
           <div>
             <div className="mt2">{editId ? 'Edit Task' : 'Log Task'}</div>
-            <div className="ms">{slot || '–'}</div>
+            <div className="ms">{slotDate || '–'} · {slot || '–'}</div>
           </div>
           <button className="ib" onClick={handleClose} style={{ width: 28, height: 28 }} aria-label="Close">
             <X size={15} />
