@@ -212,7 +212,15 @@ export default function Dashboard({ profile }) {
                     {availMins <= 0 ? 'Full' : `${availMins}m`}
                   </div>
                 </div>
-                <div className="tles">
+                <div
+                  className={`tles${availMins > 0 && !isFuture ? ' clickable-slot' : ''}`}
+                  onClick={e => {
+                    if (availMins <= 0 || isFuture) return
+                    if (e.target.closest('.ec') || e.target.closest('.brk-card') || e.target.closest('button')) return
+                    if (window.__activityModal) window.__activityModal.open(slot, null, selectedDate)
+                  }}
+                  style={{ cursor: availMins > 0 && !isFuture ? 'pointer' : 'default' }}
+                >
                   <div className="slot-meta">
                     <span className="slot-meta-item" title="Slot duration"><Clock size={10} /> {slotLimit}m</span>
                     {breakMins > 0 && <span className="slot-meta-item" title="Scheduled break"><Coffee size={10} /> {breakMins}m</span>}
